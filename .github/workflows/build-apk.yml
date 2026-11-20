@@ -2,7 +2,11 @@ name: Build APK
 
 on:
   push:
+    branches: [main]
   workflow_dispatch:
+
+permissions:
+  contents: write
 
 jobs:
   build:
@@ -17,7 +21,23 @@ jobs:
         run: |
           chmod +x ./gradlew
           ./gradlew assembleRelease --no-daemon
+          cp app/build/outputs/apk/release/app-release.apk FotoLov.apk
       - uses: actions/upload-artifact@v4
         with:
           name: FotoLov-apk
-          path: app/build/outputs/apk/release/*.apk
+          path: FotoLov.apk
+      - name: Publish release (latest)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release delete latest --yes --cleanup-tag || true
+          gh release create latest FotoLov.apk --title "FotoLov – nejnovější verze" --notes "Stáhni FotoLov.apk a nainstaluj do telefonu."
+      - name: Store APK on apk branch
+        run: |
+          mkdir /tmp/out && cp FotoLov.apk /tmp/out/
+          cd /tmp/out
+          git init -q -b apk
+          git config user.name "github-actions"
+          git config user.email "github-actions@users.noreply.github.com"
+          git add FotoLov.apk && git commit -qm "APK z ${GITHUB_SHA::7}"
+          git push -f "https://x-access-token:${{ github.token }}@github.com/${GITHUB_REPOSITORY}.git" apk
