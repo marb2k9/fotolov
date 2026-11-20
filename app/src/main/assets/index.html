@@ -1,0 +1,791 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="theme-color" content="#2b1d6b">
+<title>FotoLov</title>
+<style>
+  :root{
+    --bg1:#2b1d6b; --bg2:#0f6e6a; --card:#ffffff; --ink:#24204a; --muted:#6b6790;
+    --green:#22c55e; --green-d:#15803d; --yellow:#ffd23f; --pink:#ff4f8b; --blue:#3b82f6;
+    --radius:22px;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;height:100%}
+  body{
+    font-family:"Trebuchet MS","Segoe UI",Roboto,system-ui,sans-serif;
+    color:var(--ink);
+    background:linear-gradient(160deg,var(--bg1) 0%,#4b2a8f 45%,var(--bg2) 100%) fixed;
+    overscroll-behavior:none; user-select:none; -webkit-user-select:none;
+  }
+  #app{max-width:520px;margin:0 auto;min-height:100%;padding:calc(env(safe-area-inset-top) + 12px) 16px calc(env(safe-area-inset-bottom) + 24px)}
+  .top{display:flex;align-items:center;gap:10px;margin-bottom:14px;min-height:48px}
+  .top h1{flex:1;margin:0;color:#fff;font-size:26px;letter-spacing:.5px;text-shadow:0 3px 0 rgba(0,0,0,.25)}
+  .iconbtn{width:48px;height:48px;border-radius:16px;border:0;background:rgba(255,255,255,.18);color:#fff;font-size:24px;display:grid;place-items:center}
+  .iconbtn:active{transform:scale(.94)}
+  .logo{text-align:center;color:#fff;margin:10px 0 18px}
+  .logo .big{font-size:46px;font-weight:900;letter-spacing:1px;text-shadow:0 4px 0 rgba(0,0,0,.25)}
+  .logo .big span{color:var(--yellow)}
+  .logo .sub{opacity:.85;font-size:16px;margin-top:4px}
+  .card{background:var(--card);border-radius:var(--radius);padding:16px;box-shadow:0 10px 30px rgba(0,0,0,.25);margin-bottom:14px}
+  .btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;border:0;border-radius:18px;padding:16px 18px;font-size:20px;font-weight:800;font-family:inherit;color:#fff;background:var(--blue);box-shadow:0 6px 0 rgba(0,0,0,.22);transition:transform .08s}
+  .btn:active{transform:translateY(3px);box-shadow:0 3px 0 rgba(0,0,0,.22)}
+  .btn[disabled]{opacity:.45;filter:grayscale(.6)}
+  .btn.green{background:var(--green)} .btn.pink{background:var(--pink)} .btn.yellow{background:var(--yellow);color:#3a2a00}
+  .btn.ghost{background:rgba(255,255,255,.18);box-shadow:none}
+  .btn.white{background:#fff;color:var(--ink)}
+  .btn.small{font-size:16px;padding:11px 12px;border-radius:14px}
+  .row{display:flex;gap:10px} .row>*{flex:1}
+  /* profiles */
+  .profiles{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  .pcard{background:#fff;border-radius:24px;padding:14px 10px 12px;text-align:center;box-shadow:0 10px 25px rgba(0,0,0,.25);position:relative;border:4px solid transparent}
+  .pcard:active{transform:scale(.97)}
+  .avatar{width:96px;height:96px;border-radius:50%;margin:0 auto 8px;display:grid;place-items:center;font-size:52px;background:#eee;background-size:cover;background-position:center;border:4px solid #fff;box-shadow:0 4px 12px rgba(0,0,0,.2)}
+  .pname{font-size:22px;font-weight:900}
+  .badge{display:inline-block;padding:4px 10px;border-radius:999px;font-size:13px;font-weight:800;color:#fff;margin-top:6px}
+  .stars{font-size:14px;color:var(--muted);margin-top:6px;font-weight:700}
+  .pedit{position:absolute;top:8px;right:8px;width:36px;height:36px;border-radius:12px;border:0;background:#f1effa;font-size:18px}
+  .addp{display:grid;place-items:center;min-height:200px;border:3px dashed rgba(255,255,255,.6);background:rgba(255,255,255,.08);color:#fff;font-size:18px;font-weight:800;box-shadow:none}
+  /* wheel */
+  .who{display:flex;align-items:center;gap:10px;background:rgba(255,255,255,.15);color:#fff;border-radius:18px;padding:8px 12px;margin-bottom:10px}
+  .who .avatar{width:44px;height:44px;font-size:24px;margin:0;border-width:2px}
+  .who b{font-size:18px}
+  .wheelwrap{position:relative;width:min(92vw,400px);aspect-ratio:1;margin:6px auto 10px}
+  #wheel{width:100%;height:100%;display:block;filter:drop-shadow(0 12px 18px rgba(0,0,0,.35))}
+  .pointer{position:absolute;left:50%;top:-10px;width:44px;height:58px;margin-left:-22px;transform-origin:50% 14px;z-index:2}
+  .pointer svg{width:100%;height:100%;filter:drop-shadow(0 3px 3px rgba(0,0,0,.4))}
+  .hub{position:absolute;left:50%;top:50%;width:22%;height:22%;transform:translate(-50%,-50%);border-radius:50%;background:radial-gradient(circle at 35% 30%,#fff,#ffe27a 40%,#f2a900);border:5px solid #fff;box-shadow:0 4px 12px rgba(0,0,0,.35);display:grid;place-items:center;font-size:28px}
+  .slots{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:12px 0}
+  .slot{background:rgba(255,255,255,.14);border:3px dashed rgba(255,255,255,.45);border-radius:18px;min-height:72px;color:#fff;display:flex;align-items:center;gap:8px;padding:8px 10px;font-weight:800;font-size:15px;line-height:1.15}
+  .slot .n{width:30px;height:30px;flex:none;border-radius:50%;background:rgba(255,255,255,.25);display:grid;place-items:center;font-size:15px}
+  .slot.full{background:#fff;color:var(--ink);border:3px solid #fff;animation:pop .45s ease}
+  .slot.full .n{background:var(--yellow)}
+  .slot .e{font-size:26px}
+  @keyframes pop{0%{transform:scale(.6)}70%{transform:scale(1.08)}100%{transform:scale(1)}}
+  .result{position:fixed;inset:0;display:grid;place-items:center;background:rgba(10,5,40,.55);z-index:50;animation:fade .2s}
+  .result .box{background:#fff;border-radius:28px;padding:24px 22px;text-align:center;width:min(86vw,360px);animation:pop .5s ease}
+  .result .em{font-size:84px;line-height:1}
+  .result .t{font-size:24px;font-weight:900;margin:10px 0 18px}
+  @keyframes fade{from{opacity:0}to{opacity:1}}
+  /* photo tasks */
+  .task{background:#fff;border-radius:24px;padding:14px;margin-bottom:14px;box-shadow:0 10px 25px rgba(0,0,0,.25);border:4px solid transparent}
+  .task.done{border-color:var(--green)}
+  .task h3{margin:0 0 10px;font-size:20px;display:flex;align-items:center;gap:10px}
+  .task h3 .n{width:34px;height:34px;flex:none;border-radius:50%;background:var(--yellow);display:grid;place-items:center;font-size:17px}
+  .task h3 .e{font-size:30px}
+  .preview{position:relative;border-radius:18px;overflow:hidden;margin-bottom:10px;background:#eee}
+  .preview img{display:block;width:100%;max-height:340px;object-fit:cover}
+  .preview .ok{position:absolute;top:10px;right:10px;background:var(--green);color:#fff;font-weight:900;border-radius:999px;padding:6px 12px;font-size:16px;box-shadow:0 3px 8px rgba(0,0,0,.3)}
+  .progress{height:16px;background:rgba(255,255,255,.2);border-radius:999px;overflow:hidden;margin:4px 0 14px}
+  .progress div{height:100%;background:linear-gradient(90deg,var(--yellow),var(--green));border-radius:999px;transition:width .4s}
+  .hint{color:#fff;opacity:.9;text-align:center;font-size:15px;margin:6px 0 12px}
+  /* collage */
+  .collageimg{width:100%;border-radius:18px;box-shadow:0 12px 30px rgba(0,0,0,.4);display:block;margin-bottom:14px}
+  .album{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .album .it{background:#fff;border-radius:16px;padding:6px;box-shadow:0 6px 16px rgba(0,0,0,.25)}
+  .album img{width:100%;border-radius:12px;display:block}
+  .album .d{font-size:12px;color:var(--muted);text-align:center;margin-top:4px;font-weight:700}
+  .empty{color:#fff;text-align:center;opacity:.85;padding:30px 10px;font-size:17px}
+  /* form */
+  label.l{display:block;font-weight:800;margin:12px 0 6px}
+  input.txt{width:100%;font-size:20px;padding:12px 14px;border-radius:14px;border:3px solid #e3e0f5;font-family:inherit;font-weight:700;color:var(--ink);user-select:text;-webkit-user-select:text}
+  .levels{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+  .lvl{border:3px solid #e3e0f5;border-radius:16px;padding:10px 4px;text-align:center;font-weight:800;background:#fff;font-family:inherit;font-size:15px;color:var(--ink)}
+  .lvl .e{font-size:28px;display:block}
+  .lvl.sel{border-color:var(--ink);background:#f5f3ff}
+  .emojis{display:flex;flex-wrap:wrap;gap:6px}
+  .emojis button{font-size:28px;width:48px;height:48px;border-radius:14px;border:3px solid #eee;background:#fff}
+  .emojis button.sel{border-color:var(--ink)}
+  .toast{position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom) + 24px);transform:translateX(-50%);background:#111;color:#fff;padding:12px 18px;border-radius:14px;font-weight:700;z-index:99;max-width:90vw;text-align:center;animation:fade .2s}
+  .confetti{position:fixed;top:-40px;font-size:28px;z-index:60;pointer-events:none;animation:fall linear forwards}
+  @keyframes fall{to{transform:translateY(110vh) rotate(540deg)}}
+  .loading{position:fixed;inset:0;background:rgba(10,5,40,.6);display:grid;place-items:center;color:#fff;font-size:22px;font-weight:900;z-index:80}
+  .spinner{font-size:60px;animation:spin 1s linear infinite;display:block;text-align:center}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .joker{margin-top:10px}
+</style>
+</head>
+<body>
+<div id="app"></div>
+
+<script>
+"use strict";
+/* ================== DATA ================== */
+const LEVELS = {
+  1:{name:'Lehká',  emoji:'🌱', color:'#22c55e', stars:1},
+  2:{name:'Střední',emoji:'🌿', color:'#f59e0b', stars:2},
+  3:{name:'Těžká',  emoji:'🌳', color:'#ef4444', stars:3}
+};
+
+// s = krátký text na kolo, t = celé zadání ("Vyfoť ...")
+const TASKS = {
+  1:[
+    {e:'🔴',s:'Červené',t:'něco červeného'},
+    {e:'🟢',s:'Zelené',t:'něco zeleného'},
+    {e:'🟡',s:'Žluté',t:'něco žlutého'},
+    {e:'🔵',s:'Modré',t:'něco modrého'},
+    {e:'🌼',s:'Kytička',t:'kytičku'},
+    {e:'🍃',s:'Lístek',t:'lísteček'},
+    {e:'🪨',s:'Kámen',t:'pěkný kámen'},
+    {e:'🌳',s:'Strom',t:'velký strom'},
+    {e:'☁️',s:'Mrak',t:'mrak na nebi'},
+    {e:'🤏',s:'Malé',t:'něco hodně malého'},
+    {e:'🐘',s:'Velké',t:'něco obrovského'},
+    {e:'⚪',s:'Kulaté',t:'něco kulatého'},
+    {e:'🌲',s:'Šiška',t:'šišku'},
+    {e:'🪵',s:'Klacík',t:'zajímavý klacík'},
+    {e:'🟤',s:'Hnědé',t:'něco hnědého'}
+  ],
+  2:[
+    {e:'🟣',s:'Fialové',t:'něco fialového'},
+    {e:'🟠',s:'Oranžové',t:'něco oranžového'},
+    {e:'🐞',s:'Brouček',t:'broučka'},
+    {e:'🐦',s:'Ptáček',t:'ptáčka'},
+    {e:'🪶',s:'Pírko',t:'pírko'},
+    {e:'🍄',s:'Houba',t:'houbu (jen fotit, nesahat!)'},
+    {e:'🕸️',s:'Pavučina',t:'pavučinu'},
+    {e:'👣',s:'Stopa',t:'stopu v blátě nebo písku'},
+    {e:'💧',s:'Voda',t:'vodu – potok, louži nebo kapku'},
+    {e:'🌿',s:'Mech',t:'mech'},
+    {e:'✌️',s:'Ypsilon',t:'větvičku ve tvaru Y'},
+    {e:'❤️',s:'Srdíčko',t:'něco ve tvaru srdíčka'},
+    {e:'🌰',s:'Plod',t:'žalud, kaštan nebo oříšek'},
+    {e:'🦔',s:'Pichlavé',t:'něco pichlavého nebo hrbolatého'}
+  ],
+  3:[
+    {e:'🦋',s:'Motýl',t:'motýla nebo můru'},
+    {e:'🐌',s:'Šnek',t:'šneka nebo slimáka'},
+    {e:'🐿️',s:'Zvíře',t:'zvíře (ne psa ani kočku!)'},
+    {e:'🦅',s:'V letu',t:'ptáka v letu'},
+    {e:'😀',s:'Obličej',t:'něco, co vypadá jako obličej'},
+    {e:'🔤',s:'Písmeno',t:'písmeno, které vytvořila příroda'},
+    {e:'🌈',s:'Duha',t:'5 různých barev na jedné fotce'},
+    {e:'🐜',s:'Mravenci',t:'mraveniště nebo mravenčí cestičku'},
+    {e:'🪞',s:'Odraz',t:'odraz ve vodě'},
+    {e:'🌗',s:'Stín',t:'zajímavý stín'},
+    {e:'🔍',s:'Detail',t:'detail kůry, listu nebo kamene úplně zblízka'},
+    {e:'3️⃣',s:'Trojice',t:'tři stejné věci vedle sebe'},
+    {e:'🌸',s:'Mini kytka',t:'nejmenší kytičku, jakou najdeš'},
+    {e:'🦗',s:'Hmyz',t:'hmyz, který není brouk'}
+  ]
+};
+
+const FUN = [
+  'Mise splněna! 🕵️',
+  'Fotograf roku: {n}! 🏆',
+  'Tohle by nenašel ani Sherlock! 🔎',
+  'Hledáno, nalezeno, vyfoceno! ✅',
+  'Úlovek dne! 🎣',
+  'Příroda děkuje za spolupráci 🌍',
+  'Ostré jako břitva! ⚡',
+  'National Geographic už volá! 📞',
+  'Tohle si dáme do rámečku 🖼️',
+  'Bez šance, máme tě! 😎',
+  '{n} je prostě borec! 💪',
+  'Jedna fotka, tisíc slov 📸'
+];
+
+const SEG_COLORS = ['#ff4f8b','#ffb703','#3b82f6','#22c55e','#a855f7','#ff7a1a','#06b6d4','#ef4444','#84cc16','#ec4899','#f59e0b','#6366f1'];
+const AVATAR_EMOJIS = ['🦊','🐻','🦁','🐯','🐸','🐼','🦖','🐙','🦉','🐺','🚀','⚽','🏒','🤖'];
+
+/* ================== STORAGE ================== */
+const LS = {
+  get(k,d){try{const v=localStorage.getItem(k);return v?JSON.parse(v):d}catch(e){return d}},
+  set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){console.warn(e)}}
+};
+const DB = (()=>{
+  const mem = new Map(); let dbp=null;
+  function open(){
+    if(dbp) return dbp;
+    dbp = new Promise((res)=>{
+      try{
+        const r = indexedDB.open('fotolov',1);
+        r.onupgradeneeded = ()=> r.result.createObjectStore('kv');
+        r.onsuccess = ()=> res(r.result);
+        r.onerror = ()=> res(null);
+      }catch(e){ res(null); }
+    });
+    return dbp;
+  }
+  async function tx(mode, fn){
+    const db = await open();
+    if(!db) return fn(null);
+    return new Promise((res,rej)=>{
+      const t = db.transaction('kv',mode); const s=t.objectStore('kv'); const r=fn(s);
+      t.oncomplete=()=>res(r && r.result); t.onerror=()=>rej(t.error);
+    });
+  }
+  return {
+    get:k=>tx('readonly',s=>s?s.get(k):{result:mem.get(k)}),
+    set:(k,v)=>tx('readwrite',s=>s?s.put(v,k):(mem.set(k,v),null)),
+    del:k=>tx('readwrite',s=>s?s.delete(k):(mem.delete(k),null))
+  };
+})();
+// fix for the memory fallback (fn(null) returns plain object)
+const dbGet = async k => { const r = await DB.get(k); return (r && typeof r==='object' && 'result' in r) ? r.result : r; };
+
+function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,7)}
+
+let profiles = LS.get('fl_profiles', null);
+if(!profiles){
+  profiles = [
+    {id:uid(), name:'Daník',   emoji:'🦊', avatar:null, level:2, stars:0, count:0},
+    {id:uid(), name:'Lukášek', emoji:'🐻', avatar:null, level:1, stars:0, count:0}
+  ];
+  LS.set('fl_profiles', profiles);
+}
+const saveProfiles = ()=> LS.set('fl_profiles', profiles);
+const getProfile = id => profiles.find(p=>p.id===id);
+
+/* ================== HELPERS ================== */
+const $app = document.getElementById('app');
+const esc = s => String(s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const shuffle = a => { a=a.slice(); for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]} return a; };
+const bridge = window.AndroidBridge || null;
+
+function toast(msg,ms=2200){
+  const t=document.createElement('div'); t.className='toast'; t.textContent=msg; document.body.appendChild(t);
+  setTimeout(()=>t.remove(),ms);
+}
+function vibrate(ms){
+  try{ if(bridge && bridge.vibrate) bridge.vibrate(ms); else if(navigator.vibrate) navigator.vibrate(ms);}catch(e){}
+}
+function avatarHtml(p, cls='avatar'){
+  if(p.avatar) return `<div class="${cls}" style="background-image:url('${p.avatar}')"></div>`;
+  return `<div class="${cls}">${p.emoji||'🙂'}</div>`;
+}
+function levelBadge(l){const L=LEVELS[l];return `<span class="badge" style="background:${L.color}">${L.emoji} ${L.name}</span>`}
+function confetti(n=40){
+  const em=['🎉','⭐','📸','🌼','🍃','✨','🎈'];
+  for(let i=0;i<n;i++){
+    const c=document.createElement('div'); c.className='confetti';
+    c.textContent=em[i%em.length];
+    c.style.left=Math.random()*100+'vw';
+    c.style.animationDuration=(2+Math.random()*2.5)+'s';
+    c.style.animationDelay=(Math.random()*0.8)+'s';
+    document.body.appendChild(c); setTimeout(()=>c.remove(),5000);
+  }
+}
+function loading(on,text='Chvilku…'){
+  let el=document.getElementById('loading');
+  if(on){ if(!el){el=document.createElement('div');el.id='loading';el.className='loading';document.body.appendChild(el);} el.innerHTML=`<div><span class="spinner">📸</span>${esc(text)}</div>`; }
+  else if(el) el.remove();
+}
+
+/* image file -> downscaled JPEG dataURL */
+function fileToJpeg(file,max=1400,q=.85,square=false){
+  return new Promise((res,rej)=>{
+    const url=URL.createObjectURL(file); const img=new Image();
+    img.onload=()=>{
+      let sw=img.naturalWidth, sh=img.naturalHeight, sx=0, sy=0;
+      if(square){ const m=Math.min(sw,sh); sx=(sw-m)/2; sy=(sh-m)/2; sw=sh=m; }
+      const k=Math.min(1,max/Math.max(sw,sh)); const w=Math.round(sw*k), h=Math.round(sh*k);
+      const c=document.createElement('canvas'); c.width=w; c.height=h;
+      const x=c.getContext('2d'); x.fillStyle='#fff'; x.fillRect(0,0,w,h);
+      x.drawImage(img,sx,sy,sw,sh,0,0,w,h);
+      URL.revokeObjectURL(url); res(c.toDataURL('image/jpeg',q));
+    };
+    img.onerror=()=>{URL.revokeObjectURL(url); rej(new Error('Obrázek nejde načíst'))};
+    img.src=url;
+  });
+}
+function pickImage(useCamera){
+  return new Promise(res=>{
+    const inp=document.createElement('input'); inp.type='file'; inp.accept='image/*';
+    if(useCamera) inp.setAttribute('capture','environment');
+    inp.style.display='none'; document.body.appendChild(inp);
+    inp.onchange=()=>{ const f=inp.files&&inp.files[0]; inp.remove(); res(f||null); };
+    inp.click();
+  });
+}
+function loadImg(src){return new Promise((res,rej)=>{const i=new Image();i.onload=()=>res(i);i.onerror=rej;i.src=src;})}
+
+/* ================== SOUND ================== */
+let actx=null;
+function audio(){ if(!actx){ try{actx=new (window.AudioContext||window.webkitAudioContext)()}catch(e){} } if(actx&&actx.state==='suspended') actx.resume(); return actx; }
+function tick(){
+  const a=audio(); if(!a) return;
+  const t=a.currentTime;
+  // short noise "cvak"
+  const len=Math.floor(a.sampleRate*0.03); const buf=a.createBuffer(1,len,a.sampleRate); const d=buf.getChannelData(0);
+  for(let i=0;i<len;i++) d[i]=(Math.random()*2-1)*Math.pow(1-i/len,3);
+  const src=a.createBufferSource(); src.buffer=buf;
+  const bp=a.createBiquadFilter(); bp.type='bandpass'; bp.frequency.value=2400+Math.random()*400; bp.Q.value=2.5;
+  const g=a.createGain(); g.gain.value=0.9;
+  // a tiny "tok" body
+  const o=a.createOscillator(); o.type='triangle'; o.frequency.setValueAtTime(1200,t); o.frequency.exponentialRampToValueAtTime(400,t+0.03);
+  const og=a.createGain(); og.gain.setValueAtTime(0.25,t); og.gain.exponentialRampToValueAtTime(0.001,t+0.04);
+  src.connect(bp).connect(g).connect(a.destination); o.connect(og).connect(a.destination);
+  src.start(t); o.start(t); o.stop(t+0.05);
+}
+function fanfare(){
+  const a=audio(); if(!a) return; const t=a.currentTime;
+  [523.25,659.25,783.99,1046.5].forEach((f,i)=>{
+    const o=a.createOscillator(), g=a.createGain(); o.type='square'; o.frequency.value=f;
+    g.gain.setValueAtTime(0.0001,t+i*0.11); g.gain.exponentialRampToValueAtTime(0.18,t+i*0.11+0.02); g.gain.exponentialRampToValueAtTime(0.0001,t+i*0.11+(i===3?0.6:0.2));
+    o.connect(g).connect(a.destination); o.start(t+i*0.11); o.stop(t+i*0.11+0.7);
+  });
+}
+function shutter(){
+  const a=audio(); if(!a) return; const t=a.currentTime;
+  const len=Math.floor(a.sampleRate*0.12); const buf=a.createBuffer(1,len,a.sampleRate); const d=buf.getChannelData(0);
+  for(let i=0;i<len;i++) d[i]=(Math.random()*2-1)*(i<len*0.3?1:Math.pow(1-i/len,2));
+  const s=a.createBufferSource(); s.buffer=buf; const g=a.createGain(); g.gain.value=0.35; s.connect(g).connect(a.destination); s.start(t);
+}
+
+/* ================== GAME STATE ================== */
+// game: {pid, level, segs:[task], drawn:[task], joker:1, phase:'spin'|'photo'}
+// photos in IndexedDB: 'ph_'+pid+'_'+i  -> {src, ok:boolean}
+let game=null, photos=[null,null,null,null], current=null, screen='profiles';
+const gameKey = pid => 'fl_game_'+pid;
+
+function newGame(p){
+  const L=p.level;
+  let segs;
+  if(L===1) segs=shuffle(TASKS[1]).slice(0,12);
+  else segs=shuffle(shuffle(TASKS[L]).slice(0,8).concat(shuffle(TASKS[L-1]).slice(0,4)));
+  game={pid:p.id, level:L, segs, drawn:[], joker:1, phase:'spin'};
+  photos=[null,null,null,null];
+  LS.set(gameKey(p.id),game);
+  for(let i=0;i<4;i++) DB.del('ph_'+p.id+'_'+i);
+}
+async function loadGame(p){
+  const g=LS.get(gameKey(p.id),null);
+  if(g && g.level===p.level && g.drawn){
+    game=g;
+    photos=[];
+    for(let i=0;i<4;i++) photos.push(await dbGet('ph_'+p.id+'_'+i) || null);
+  } else newGame(p);
+}
+const saveGame=()=>LS.set(gameKey(game.pid),game);
+
+/* ================== SCREENS ================== */
+function render(html){ $app.innerHTML=html; window.scrollTo(0,0); }
+
+function showProfiles(){
+  screen='profiles'; current=null;
+  render(`
+    <div class="logo"><div class="big">📸 Foto<span>Lov</span></div><div class="sub">Zatoč kolem, najdi to a vyfoť!</div></div>
+    <div style="color:#fff;font-weight:900;font-size:20px;margin:0 4px 10px">Kdo jde na výpravu?</div>
+    <div class="profiles">
+      ${profiles.map(p=>`
+        <div class="pcard" data-id="${p.id}">
+          <button class="pedit" data-edit="${p.id}" aria-label="Upravit">✏️</button>
+          ${avatarHtml(p)}
+          <div class="pname">${esc(p.name)}</div>
+          ${levelBadge(p.level)}
+          <div class="stars">⭐ ${p.stars} · 🖼️ ${p.count}</div>
+        </div>`).join('')}
+      <div class="pcard addp" id="addp">➕<br>Nový hráč</div>
+    </div>`);
+  $app.querySelectorAll('.pcard[data-id]').forEach(el=>el.onclick=e=>{
+    if(e.target.closest('[data-edit]')) return;
+    audio(); openProfile(el.dataset.id);
+  });
+  $app.querySelectorAll('[data-edit]').forEach(b=>b.onclick=e=>{e.stopPropagation(); showEdit(b.dataset.edit)});
+  document.getElementById('addp').onclick=()=>showEdit(null);
+}
+
+function showEdit(id){
+  screen='edit';
+  const p = id ? {...getProfile(id)} : {id:null,name:'',emoji:AVATAR_EMOJIS[Math.floor(Math.random()*AVATAR_EMOJIS.length)],avatar:null,level:1,stars:0,count:0};
+  render(`
+    <div class="top"><button class="iconbtn" id="back">←</button><h1>${id?'Upravit hráče':'Nový hráč'}</h1></div>
+    <div class="card">
+      <div style="text-align:center">
+        <div id="av">${avatarHtml(p)}</div>
+        <div class="row" style="margin-top:6px">
+          <button class="btn small" id="avcam">📷 Vyfotit se</button>
+          <button class="btn small" id="avgal" style="background:#a855f7">🖼️ Obrázek</button>
+        </div>
+      </div>
+      <label class="l">Nebo zvířátko:</label>
+      <div class="emojis">${AVATAR_EMOJIS.map(e=>`<button data-e="${e}" class="${!p.avatar&&p.emoji===e?'sel':''}">${e}</button>`).join('')}</div>
+      <label class="l">Jméno:</label>
+      <input class="txt" id="nm" maxlength="16" value="${esc(p.name)}" placeholder="Jak se jmenuješ?">
+      <label class="l">Obtížnost:</label>
+      <div class="levels">${[1,2,3].map(l=>`<button class="lvl ${p.level===l?'sel':''}" data-l="${l}"><span class="e">${LEVELS[l].emoji}</span>${LEVELS[l].name}</button>`).join('')}</div>
+    </div>
+    <button class="btn green" id="save">✅ Uložit</button>
+    ${id && profiles.length>1?`<button class="btn ghost" id="del" style="margin-top:12px">🗑️ Smazat hráče</button>`:''}
+  `);
+  const refreshAv=()=>{document.getElementById('av').innerHTML=avatarHtml(p);};
+  document.getElementById('back').onclick=showProfiles;
+  const setAv=async cam=>{ const f=await pickImage(cam); if(!f) return; try{ p.avatar=await fileToJpeg(f,320,.85,true); refreshAv(); $app.querySelectorAll('.emojis button').forEach(x=>x.classList.remove('sel')); }catch(e){toast('Obrázek se nepodařilo načíst')} };
+  document.getElementById('avcam').onclick=()=>setAv(true);
+  document.getElementById('avgal').onclick=()=>setAv(false);
+  $app.querySelectorAll('.emojis button').forEach(b=>b.onclick=()=>{p.emoji=b.dataset.e; p.avatar=null; refreshAv(); $app.querySelectorAll('.emojis button').forEach(x=>x.classList.toggle('sel',x===b));});
+  $app.querySelectorAll('.lvl').forEach(b=>b.onclick=()=>{p.level=+b.dataset.l; $app.querySelectorAll('.lvl').forEach(x=>x.classList.toggle('sel',x===b));});
+  document.getElementById('save').onclick=()=>{
+    p.name=document.getElementById('nm').value.trim();
+    if(!p.name){toast('Napiš jméno 🙂');return;}
+    if(id){ const i=profiles.findIndex(x=>x.id===id); profiles[i]=p; }
+    else { p.id=uid(); profiles.push(p); }
+    saveProfiles(); showProfiles();
+  };
+  const del=document.getElementById('del');
+  if(del) del.onclick=()=>{
+    if(!confirm('Opravdu smazat hráče '+p.name+'?')) return;
+    profiles=profiles.filter(x=>x.id!==id); saveProfiles(); localStorage.removeItem(gameKey(id)); showProfiles();
+  };
+}
+
+async function openProfile(id){
+  current=getProfile(id);
+  await loadGame(current);
+  if(game.phase==='photo') showPhotos(); else showSpin();
+}
+
+/* ---------- WHEEL ---------- */
+let wheel={rot:0, spinning:false, raf:0};
+function showSpin(){
+  screen='spin';
+  const p=current;
+  render(`
+    <div class="top">
+      <button class="iconbtn" id="back">←</button>
+      <h1>Losování</h1>
+      <button class="iconbtn" id="alb" aria-label="Album">🖼️</button>
+    </div>
+    <div class="who">${avatarHtml(p)}<b>${esc(p.name)}</b><span style="flex:1"></span>${levelBadge(p.level)}</div>
+    <div class="wheelwrap">
+      <div class="pointer" id="ptr"><svg viewBox="0 0 44 58"><path d="M22 56 L4 14 A18 18 0 1 1 40 14 Z" fill="#fff"/><path d="M22 48 L9 15 A13 13 0 1 1 35 15 Z" fill="#ff2d55"/><circle cx="22" cy="14" r="5" fill="#fff"/></svg></div>
+      <canvas id="wheel"></canvas>
+      <div class="hub">📸</div>
+    </div>
+    <div id="spinarea"></div>
+    <div class="slots" id="slots"></div>
+  `);
+  document.getElementById('back').onclick=()=>{ if(!wheel.spinning) showProfiles(); };
+  document.getElementById('alb').onclick=()=>{ if(!wheel.spinning) showAlbum(); };
+  wheel.rot = Math.random()*Math.PI*2;
+  sizeWheel(); drawWheel(); renderSlots(); renderSpinArea();
+}
+function remainingSegs(){ const used=new Set(game.drawn.map(t=>t.t)); return game.segs.filter(s=>!used.has(s.t)); }
+function sizeWheel(){
+  const c=document.getElementById('wheel'); if(!c) return;
+  const r=c.getBoundingClientRect(); const dpr=Math.min(window.devicePixelRatio||1,3);
+  c.width=Math.round(r.width*dpr); c.height=Math.round(r.height*dpr);
+}
+function drawWheel(){
+  const c=document.getElementById('wheel'); if(!c) return;
+  const x=c.getContext('2d'); const W=c.width, R=W/2, cx=R, cy=R;
+  const segs=remainingSegs(); const n=segs.length; const a=Math.PI*2/n;
+  x.clearRect(0,0,W,W);
+  // rim
+  x.beginPath(); x.arc(cx,cy,R*0.995,0,Math.PI*2); x.fillStyle='#2b1d6b'; x.fill();
+  const r=R*0.90;
+  for(let i=0;i<n;i++){
+    const st=wheel.rot+i*a;
+    x.beginPath(); x.moveTo(cx,cy); x.arc(cx,cy,r,st,st+a); x.closePath();
+    x.fillStyle=SEG_COLORS[(game.segs.indexOf(segs[i]))%SEG_COLORS.length]; x.fill();
+    x.lineWidth=R*0.012; x.strokeStyle='rgba(255,255,255,.9)'; x.stroke();
+    // label
+    x.save(); x.translate(cx,cy); x.rotate(st+a/2);
+    x.textAlign='right'; x.textBaseline='middle';
+    const fs=Math.max(R*0.062, Math.min(R*0.085, R*0.9/n*1.0));
+    x.font=`900 ${fs}px "Trebuchet MS",Roboto,sans-serif`;
+    x.fillStyle='#fff'; x.shadowColor='rgba(0,0,0,.35)'; x.shadowBlur=R*0.012; x.shadowOffsetY=R*0.006;
+    x.fillText(segs[i].s, r*0.80, 0);
+    x.shadowColor='transparent';
+    x.font=`${fs*1.25}px sans-serif`; x.fillText(segs[i].e, r*0.97, 0);
+    x.restore();
+  }
+  // pegs (cvakací kolíčky)
+  for(let i=0;i<n;i++){
+    const ang=wheel.rot+i*a; const px=cx+Math.cos(ang)*R*0.945, py=cy+Math.sin(ang)*R*0.945;
+    x.beginPath(); x.arc(px,py,R*0.025,0,Math.PI*2); x.fillStyle='#ffd23f'; x.fill(); x.lineWidth=R*0.006; x.strokeStyle='#b07d00'; x.stroke();
+  }
+}
+function segIndexAtPointer(rot,n){
+  const a=Math.PI*2/n; let p=(-Math.PI/2 - rot)%(Math.PI*2); if(p<0) p+=Math.PI*2;
+  return Math.floor(p/a)%n;
+}
+function renderSlots(){
+  const el=document.getElementById('slots'); if(!el) return;
+  el.innerHTML=[0,1,2,3].map(i=>{
+    const t=game.drawn[i];
+    return t?`<div class="slot full"><span class="n">${i+1}</span><span class="e">${t.e}</span><span>${esc(cap(t.t))}</span></div>`
+            :`<div class="slot"><span class="n">${i+1}</span><span>?</span></div>`;
+  }).join('');
+}
+const cap = s => s.charAt(0).toUpperCase()+s.slice(1);
+function renderSpinArea(){
+  const el=document.getElementById('spinarea'); if(!el) return;
+  const k=game.drawn.length;
+  if(k<4){
+    el.innerHTML=`<button class="btn pink" id="spin" style="font-size:26px;padding:18px">🎡 ZATOČ! <small style="font-size:16px;opacity:.9">(${k+1}/4)</small></button>
+      ${k>0 && game.joker>0?`<button class="btn ghost small joker" id="jok">🃏 Žolík: přelosovat poslední úkol (máš ${game.joker}×)</button>`:''}`;
+    document.getElementById('spin').onclick=spin;
+    const j=document.getElementById('jok'); if(j) j.onclick=useJoker;
+  } else {
+    el.innerHTML=`<button class="btn green" id="go" style="font-size:24px;padding:18px">📸 Jdu fotit!</button>
+      ${game.joker>0?`<button class="btn ghost small joker" id="jok">🃏 Žolík: přelosovat poslední úkol</button>`:''}`;
+    document.getElementById('go').onclick=()=>{game.phase='photo';saveGame();showPhotos();};
+    const j=document.getElementById('jok'); if(j) j.onclick=useJoker;
+  }
+}
+function useJoker(){
+  if(wheel.spinning||game.joker<1||!game.drawn.length) return;
+  const removed=game.drawn.pop(); game.joker--;
+  // vyřadit přelosovaný úkol z kola úplně
+  game.segs=game.segs.filter(s=>s.t!==removed.t);
+  saveGame(); drawWheel(); renderSlots(); renderSpinArea();
+  toast('🃏 Úkol „'+removed.s+'“ je pryč. Zatoč znovu!');
+}
+function spin(){
+  if(wheel.spinning) return;
+  audio();
+  const segs=remainingSegs(); const n=segs.length; if(!n) return;
+  wheel.spinning=true;
+  document.getElementById('spin').disabled=true; const j=document.getElementById('jok'); if(j) j.disabled=true;
+  const start=wheel.rot;
+  const target=start + Math.PI*2*(5+Math.random()*3) + Math.random()*Math.PI*2;
+  const dur=5200+Math.random()*1800;
+  const t0=performance.now();
+  let lastIdx=segIndexAtPointer(start,n);
+  const ptr=document.getElementById('ptr'); let flap=0;
+  const ease=t=>1-Math.pow(1-t,4);
+  function frame(now){
+    const t=Math.min(1,(now-t0)/dur);
+    wheel.rot=start+(target-start)*ease(t);
+    const idx=segIndexAtPointer(wheel.rot,n);
+    if(idx!==lastIdx){ lastIdx=idx; tick(); flap=1; if(t>0.6) vibrate(8); }
+    flap*=0.82;
+    if(ptr) ptr.style.transform=`rotate(${-flap*28}deg)`;
+    drawWheel();
+    if(t<1) wheel.raf=requestAnimationFrame(frame);
+    else { wheel.spinning=false; if(ptr) ptr.style.transform=''; landed(segs[idx]); }
+  }
+  wheel.raf=requestAnimationFrame(frame);
+}
+function landed(task){
+  game.drawn.push(task); saveGame();
+  fanfare(); vibrate(60);
+  const ov=document.createElement('div'); ov.className='result';
+  ov.innerHTML=`<div class="box"><div style="font-weight:800;color:#6b6790">${game.drawn.length}. úkol – vyfoť:</div><div class="em">${task.e}</div><div class="t">${esc(cap(task.t))}</div><button class="btn green">👍 Jasně!</button></div>`;
+  document.body.appendChild(ov);
+  const close=()=>{ov.remove(); drawWheel(); renderSlots(); renderSpinArea(); if(game.drawn.length===4) confetti(25);};
+  ov.querySelector('button').onclick=close; ov.onclick=e=>{if(e.target===ov) close();};
+}
+
+/* ---------- PHOTOS ---------- */
+function showPhotos(){
+  screen='photo';
+  const p=current;
+  const done=photos.filter(x=>x&&x.ok).length;
+  render(`
+    <div class="top"><button class="iconbtn" id="back">←</button><h1>Foť! 📸</h1><span style="color:#fff;font-weight:900;font-size:20px">${done}/4</span></div>
+    <div class="progress"><div style="width:${done*25}%"></div></div>
+    ${game.drawn.map((t,i)=>{
+      const ph=photos[i];
+      let body;
+      if(!ph) body=`<div class="row"><button class="btn" data-cam="${i}">📷 Vyfotit</button><button class="btn" style="background:#a855f7" data-gal="${i}">🖼️ Z galerie</button></div>`;
+      else if(!ph.ok) body=`<div class="preview"><img src="${ph.src}"></div><div class="row"><button class="btn green" data-ok="${i}">✅ OK</button><button class="btn ghost" style="background:#eceaf6;color:#24204a" data-redo="${i}">🔄 Jinou</button></div>`;
+      else body=`<div class="preview"><img src="${ph.src}"><span class="ok">✓ Hotovo</span></div><button class="btn ghost small" style="background:#eceaf6;color:#24204a" data-redo="${i}">🔄 Změnit fotku</button>`;
+      return `<div class="task ${ph&&ph.ok?'done':''}"><h3><span class="n">${i+1}</span><span class="e">${t.e}</span><span>Vyfoť ${esc(t.t)}</span></h3>${body}</div>`;
+    }).join('')}
+    <button class="btn yellow" id="fin" ${done<4?'disabled':''} style="font-size:22px;padding:18px">🎉 Mám všechny 4!</button>
+    ${done<4?`<div class="hint">Až budou všechny 4 fotky zelené, udělám z nich koláž 🖼️</div>`:''}
+  `);
+  document.getElementById('back').onclick=()=>showProfiles();
+  $app.querySelectorAll('[data-cam]').forEach(b=>b.onclick=()=>takePhoto(+b.dataset.cam,true));
+  $app.querySelectorAll('[data-gal]').forEach(b=>b.onclick=()=>takePhoto(+b.dataset.gal,false));
+  $app.querySelectorAll('[data-ok]').forEach(b=>b.onclick=async()=>{
+    const i=+b.dataset.ok; photos[i].ok=true; await DB.set('ph_'+game.pid+'_'+i,photos[i]);
+    vibrate(40); fanfareSmall(); const y=window.scrollY; showPhotos(); window.scrollTo(0,y);
+    if(photos.every(x=>x&&x.ok)) { confetti(30); setTimeout(()=>document.getElementById('fin')?.scrollIntoView({behavior:'smooth',block:'center'}),300); }
+  });
+  $app.querySelectorAll('[data-redo]').forEach(b=>b.onclick=async()=>{
+    const i=+b.dataset.redo; photos[i]=null; await DB.del('ph_'+game.pid+'_'+i); const y=window.scrollY; showPhotos(); window.scrollTo(0,y);
+  });
+  document.getElementById('fin').onclick=finish;
+}
+function fanfareSmall(){
+  const a=audio(); if(!a) return; const t=a.currentTime;
+  [784,1175].forEach((f,i)=>{const o=a.createOscillator(),g=a.createGain();o.type='sine';o.frequency.value=f;g.gain.setValueAtTime(0.0001,t+i*.09);g.gain.exponentialRampToValueAtTime(.25,t+i*.09+.02);g.gain.exponentialRampToValueAtTime(.0001,t+i*.09+.25);o.connect(g).connect(a.destination);o.start(t+i*.09);o.stop(t+i*.09+.3);});
+}
+async function takePhoto(i,cam){
+  const f=await pickImage(cam); if(!f) return;
+  loading(true,'Načítám fotku…');
+  try{
+    const src=await fileToJpeg(f,1400,.85);
+    shutter();
+    photos[i]={src,ok:false}; await DB.set('ph_'+game.pid+'_'+i,photos[i]);
+  }catch(e){ toast('Fotku se nepodařilo načíst 😕'); }
+  loading(false);
+  const y=window.scrollY; showPhotos(); window.scrollTo(0,y);
+}
+
+/* ---------- COLLAGE ---------- */
+function rr(x,X,Y,W,H,r){x.beginPath();x.moveTo(X+r,Y);x.arcTo(X+W,Y,X+W,Y+H,r);x.arcTo(X+W,Y+H,X,Y+H,r);x.arcTo(X,Y+H,X,Y,r);x.arcTo(X,Y,X+W,Y,r);x.closePath();}
+function wrap(x,text,maxW){
+  const words=text.split(' '); const lines=[]; let line='';
+  for(const w of words){ const t=line?line+' '+w:w; if(x.measureText(t).width>maxW && line){lines.push(line);line=w;} else line=t; }
+  if(line) lines.push(line); return lines;
+}
+async function buildCollage(p,tasks,srcs){
+  const W=1080,H=1820; const c=document.createElement('canvas'); c.width=W; c.height=H; const x=c.getContext('2d');
+  const F='"Trebuchet MS",Roboto,"Noto Sans",sans-serif';
+  // background
+  const g=x.createLinearGradient(0,0,W,H); g.addColorStop(0,'#2b1d6b'); g.addColorStop(.5,'#5b2a9b'); g.addColorStop(1,'#0f6e6a');
+  x.fillStyle=g; x.fillRect(0,0,W,H);
+  // dots
+  x.globalAlpha=.08; x.fillStyle='#fff'; for(let i=0;i<70;i++){x.beginPath();x.arc(Math.random()*W,Math.random()*H,4+Math.random()*16,0,7);x.fill();} x.globalAlpha=1;
+  // header
+  x.textAlign='center'; x.fillStyle='#fff'; x.font=`900 74px ${F}`;
+  x.shadowColor='rgba(0,0,0,.3)'; x.shadowOffsetY=5;
+  x.fillText('📸 FotoLov', W/2, 100);
+  x.shadowOffsetY=0; x.shadowColor='transparent';
+  const L=LEVELS[game.level];
+  const d=new Date(); const ds=d.getDate()+'. '+(d.getMonth()+1)+'. '+d.getFullYear();
+  x.font=`700 34px ${F}`; x.fillStyle='#ffd23f';
+  x.fillText(`Fotovýprava: ${p.name} · ${ds}`, W/2, 156);
+  // cards
+  const fun=shuffle(FUN);
+  const cw=480, ch=680, gx=40, gy=200, gapx=40, gapy=40;
+  for(let i=0;i<4;i++){
+    const col=i%2,row=Math.floor(i/2);
+    const X=gx+col*(cw+gapx), Y=gy+row*(ch+gapy);
+    x.save();
+    x.translate(X+cw/2,Y+ch/2); x.rotate((i%3===0?-1:1)*(1.2+Math.random()*1.3)*Math.PI/180); x.translate(-cw/2,-ch/2);
+    x.shadowColor='rgba(0,0,0,.35)'; x.shadowBlur=24; x.shadowOffsetY=10;
+    rr(x,0,0,cw,ch,22); x.fillStyle='#fff'; x.fill();
+    x.shadowColor='transparent';
+    // photo (cover crop)
+    const ps=448, px=16, py=16;
+    const img=await loadImg(srcs[i]);
+    const s=Math.max(ps/img.naturalWidth, ps/img.naturalHeight);
+    const sw=ps/s, sh=ps/s, sx=(img.naturalWidth-sw)/2, sy=(img.naturalHeight-sh)/2;
+    x.save(); rr(x,px,py,ps,ps,14); x.clip(); x.drawImage(img,sx,sy,sw,sh,px,py,ps,ps); x.restore();
+    // number bubble
+    x.beginPath(); x.arc(px+40,py+40,30,0,7); x.fillStyle='#ffd23f'; x.fill(); x.lineWidth=5; x.strokeStyle='#fff'; x.stroke();
+    x.fillStyle='#24204a'; x.font=`900 34px ${F}`; x.textAlign='center'; x.textBaseline='middle'; x.fillText(String(i+1),px+40,py+42);
+    // emoji bubble
+    x.font='44px sans-serif'; x.fillText(tasks[i].e, px+ps-38, py+42);
+    // texts
+    x.textBaseline='alphabetic'; x.textAlign='left';
+    x.fillStyle='#6b6790'; x.font=`700 24px ${F}`;
+    x.fillText(`${i+1}. úkol – měl jsem vyfotit:`, 22, py+ps+42);
+    x.fillStyle='#24204a'; x.font=`900 32px ${F}`;
+    const lines=wrap(x,cap(tasks[i].t),cw-44).slice(0,2);
+    lines.forEach((ln,k)=>x.fillText(ln,22,py+ps+84+k*38));
+    x.fillStyle='#ff2d75'; x.font=`italic 800 27px ${F}`;
+    const fl=wrap(x,fun[i%fun.length].replace('{n}',p.name),cw-44).slice(0,1);
+    x.fillText(fl[0], 22, ch-24);
+    x.restore();
+  }
+  // footer
+  const fy=gy+2*ch+gapy+30;
+  x.textAlign='center'; x.textBaseline='middle';
+  x.fillStyle='rgba(255,255,255,.15)'; rr(x,40,fy,W-80,H-fy-30,30); x.fill();
+  const mid=fy+(H-fy-30)/2;
+  // avatar
+  const ax=110, ar=48;
+  x.save(); x.beginPath(); x.arc(ax,mid,ar,0,7); x.closePath(); x.fillStyle='#fff'; x.fill();
+  if(p.avatar){ const ai=await loadImg(p.avatar); x.clip(); x.drawImage(ai,ax-ar,mid-ar,ar*2,ar*2); }
+  else { x.font='58px sans-serif'; x.fillStyle='#000'; x.fillText(p.emoji||'🙂',ax,mid+4); }
+  x.restore();
+  x.textAlign='left'; x.fillStyle='#fff'; x.font=`900 40px ${F}`; x.fillText(p.name, 180, mid-18);
+  x.font=`700 28px ${F}`; x.fillStyle='#ffd23f'; x.fillText(`${L.emoji} ${L.name} · ⭐ +${L.stars}`, 180, mid+24);
+  x.textAlign='right'; x.fillStyle='#fff'; x.font=`900 36px ${F}`; x.fillText('Mise splněna! 🎉', W-80, mid);
+  return c.toDataURL('image/jpeg',.9);
+}
+async function finish(){
+  if(!photos.every(x=>x&&x.ok)) return;
+  loading(true,'Lepím koláž…');
+  try{
+    const p=current;
+    const data=await buildCollage(p,game.drawn,photos.map(x=>x.src));
+    const id=uid();
+    await DB.set('col_'+id,data);
+    const al=(await dbGet('album_'+p.id))||[];
+    al.unshift({id,date:Date.now(),level:game.level});
+    await DB.set('album_'+p.id,al);
+    p.stars+=LEVELS[game.level].stars; p.count++; saveProfiles();
+    // reset hry
+    localStorage.removeItem(gameKey(p.id)); for(let i=0;i<4;i++) DB.del('ph_'+p.id+'_'+i);
+    game=null; photos=[null,null,null,null];
+    loading(false);
+    fanfare(); confetti(35); vibrate(120);
+    showCollage(data,id,true);
+  }catch(e){ loading(false); console.error(e); toast('Koláž se nepovedla: '+e.message); }
+}
+function showCollage(data,id,fresh){
+  screen='collage';
+  const p=current;
+  render(`
+    <div class="top"><button class="iconbtn" id="back">←</button><h1>${fresh?'Hotovo! 🎉':'Koláž'}</h1></div>
+    <img class="collageimg" src="${data}">
+    <div class="row" style="margin-bottom:12px">
+      <button class="btn green" id="save">💾 Uložit</button>
+      <button class="btn" id="share">📤 Poslat</button>
+    </div>
+    ${fresh?`<button class="btn pink" id="again">🎡 Nová výprava</button>`:`<button class="btn ghost" id="del">🗑️ Smazat koláž</button>`}
+  `);
+  document.getElementById('back').onclick=()=> fresh?showProfiles():showAlbum();
+  const name=`FotoLov_${p.name}_${new Date().toISOString().slice(0,10)}_${id.slice(-4)}.jpg`;
+  document.getElementById('save').onclick=()=>saveImage(data,name);
+  document.getElementById('share').onclick=()=>shareImage(data,name);
+  const ag=document.getElementById('again'); if(ag) ag.onclick=()=>openProfile(p.id);
+  const dl=document.getElementById('del'); if(dl) dl.onclick=async()=>{
+    if(!confirm('Smazat tuhle koláž?')) return;
+    const al=((await dbGet('album_'+p.id))||[]).filter(a=>a.id!==id);
+    await DB.set('album_'+p.id,al); await DB.del('col_'+id); showAlbum();
+  };
+}
+function saveImage(data,name){
+  const b64=data.split(',')[1];
+  if(bridge && bridge.saveImage){
+    const r=bridge.saveImage(b64,name);
+    toast(r==='ok'?'✅ Uloženo do Galerie (složka FotoLov)':'😕 Uložení se nepovedlo');
+  } else {
+    const a=document.createElement('a'); a.href=data; a.download=name; document.body.appendChild(a); a.click(); a.remove();
+    toast('✅ Stahuju obrázek');
+  }
+}
+async function shareImage(data,name){
+  const b64=data.split(',')[1];
+  if(bridge && bridge.shareImage){ bridge.shareImage(b64,name); return; }
+  try{
+    const blob=await (await fetch(data)).blob(); const file=new File([blob],name,{type:'image/jpeg'});
+    if(navigator.canShare && navigator.canShare({files:[file]})){ await navigator.share({files:[file],title:'FotoLov'}); return; }
+  }catch(e){ if(e && e.name==='AbortError') return; }
+  saveImage(data,name);
+}
+
+/* ---------- ALBUM ---------- */
+async function showAlbum(){
+  screen='album';
+  const p=current;
+  const al=(await dbGet('album_'+p.id))||[];
+  const items=[];
+  for(const a of al){ const d=await dbGet('col_'+a.id); if(d) items.push({...a,data:d}); }
+  render(`
+    <div class="top"><button class="iconbtn" id="back">←</button><h1>Album – ${esc(p.name)}</h1></div>
+    ${items.length?`<div class="album">${items.map(it=>`<div class="it" data-id="${it.id}"><img src="${it.data}"><div class="d">${new Date(it.date).toLocaleDateString('cs-CZ')} · ${LEVELS[it.level].emoji}</div></div>`).join('')}</div>`
+      :`<div class="empty">Zatím tu nic není.<br>Zatoč kolem a vyraž na první výpravu! 🎡</div>`}
+  `);
+  document.getElementById('back').onclick=()=>openProfile(p.id);
+  $app.querySelectorAll('.it').forEach(el=>el.onclick=()=>{const it=items.find(i=>i.id===el.dataset.id); showCollage(it.data,it.id,false);});
+}
+
+/* ---------- BACK BUTTON (Android) ---------- */
+window.onAndroidBack=function(){
+  if(document.querySelector('.result')){ document.querySelector('.result button').click(); return true; }
+  if(wheel.spinning) return true;
+  switch(screen){
+    case 'profiles': return false;
+    case 'edit': case 'spin': case 'photo': showProfiles(); return true;
+    case 'album': openProfile(current.id); return true;
+    case 'collage': document.getElementById('back').click(); return true;
+  }
+  return false;
+};
+window.addEventListener('resize',()=>{ if(screen==='spin'){ sizeWheel(); drawWheel(); } });
+
+showProfiles();
+</script>
+</body>
+</html>
