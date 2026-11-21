@@ -97,6 +97,23 @@
   .emojis{display:flex;flex-wrap:wrap;gap:6px}
   .emojis button{font-size:28px;width:48px;height:48px;border-radius:14px;border:3px solid #eee;background:#fff}
   .emojis button.sel{border-color:var(--ink)}
+  .seasons{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+  .seasons .lvl{font-size:14px;padding:8px 2px}
+  .seasons .lvl.hard{grid-column:1/-1;display:flex;align-items:center;justify-content:center;gap:10px;background:linear-gradient(90deg,#fff1f2,#f3e8ff);border-color:#d8b4fe;color:#6d28d9}
+  .seasons .lvl.hard .e{display:inline;font-size:28px}
+  .seasons .lvl.hard.sel{border-color:#6d28d9}
+  .seasons .lvl small{display:block;font-size:12px;font-weight:700;opacity:.85}
+  .stepper{display:flex;align-items:center;gap:12px}
+  .stepper button{width:64px;height:64px;flex:none;border-radius:20px;border:0;font-size:38px;font-weight:900;line-height:1;background:var(--blue);color:#fff;box-shadow:0 5px 0 rgba(0,0,0,.2);font-family:inherit}
+  .stepper button:active{transform:translateY(3px);box-shadow:0 2px 0 rgba(0,0,0,.2)}
+  .stepper button[disabled]{opacity:.3}
+  .stepper .val{flex:1;text-align:center}
+  .stepper .val b{display:block;font-size:42px;line-height:1}
+  .stepper .val span{font-size:14px;color:var(--muted);font-weight:700}
+  .setup{margin-top:12px}
+  .setup h2{margin:0 0 4px;font-size:19px}
+  .who .badges{display:flex;flex-direction:column;align-items:flex-end;gap:4px}
+  .who .badges .badge{margin:0}
   .toast{position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom) + 24px);transform:translateX(-50%);background:#111;color:#fff;padding:12px 18px;border-radius:14px;font-weight:700;z-index:99;max-width:90vw;text-align:center;animation:fade .2s}
   .confetti{position:fixed;top:-40px;font-size:28px;z-index:60;pointer-events:none;animation:fall linear forwards}
   @keyframes fall{to{transform:translateY(110vh) rotate(540deg)}}
@@ -117,73 +134,117 @@ const LEVELS = {
   2:{name:'Střední',emoji:'🌿', color:'#f59e0b', stars:2},
   3:{name:'Těžká',  emoji:'🌳', color:'#ef4444', stars:3}
 };
+const SEASONS = {
+  j:{name:'Jaro',  e:'🌷', color:'#ec4899'},
+  l:{name:'Léto',  e:'☀️', color:'#f59e0b'},
+  p:{name:'Podzim',e:'🍂', color:'#ea580c'},
+  z:{name:'Zima',  e:'❄️', color:'#0ea5e9'},
+  m:{name:'Mix',   e:'🔥', color:'#7c3aed', hard:true}
+};
+const SEASON_ORDER = ['j','l','p','z','m'];
+const MIN_PHOTOS = 4, MAX_PHOTOS = 20;
+function currentSeason(){ const m=new Date().getMonth(); return (m===11||m<=1)?'z':m<=4?'j':m<=7?'l':'p'; }
 
-// s = krátký text na kolo, t = celé zadání ("Vyfoť ...")
+// s = krátký text na kolo, t = celé zadání ("Vyfoť ..."), z = roční období (j=jaro, l=léto, p=podzim, z=zima)
+const A='jlpz';
 const TASKS = {
   1:[
-    {e:'🔴',s:'Červené',t:'něco červeného'},
-    {e:'🟢',s:'Zelené',t:'něco zeleného'},
-    {e:'🟡',s:'Žluté',t:'něco žlutého'},
-    {e:'🔵',s:'Modré',t:'něco modrého'},
-    {e:'🌼',s:'Kytička',t:'kytičku'},
-    {e:'🍃',s:'Lístek',t:'lísteček'},
-    {e:'🪨',s:'Kámen',t:'pěkný kámen'},
-    {e:'🌳',s:'Strom',t:'velký strom'},
-    {e:'☁️',s:'Mrak',t:'mrak na nebi'},
-    {e:'🤏',s:'Malé',t:'něco hodně malého'},
-    {e:'🐘',s:'Velké',t:'něco obrovského'},
-    {e:'⚪',s:'Kulaté',t:'něco kulatého'},
-    {e:'🌲',s:'Šiška',t:'šišku'},
-    {e:'🪵',s:'Klacík',t:'zajímavý klacík'},
-    {e:'🟤',s:'Hnědé',t:'něco hnědého'}
+    {e:'🔴',s:'Červené',t:'něco červeného',z:A},
+    {e:'🟢',s:'Zelené',t:'něco zeleného',z:A},
+    {e:'🟡',s:'Žluté',t:'něco žlutého',z:'jlp'},
+    {e:'🔵',s:'Modré',t:'něco modrého',z:A},
+    {e:'🟤',s:'Hnědé',t:'něco hnědého',z:A},
+    {e:'⚪',s:'Bílé',t:'něco bílého',z:A},
+    {e:'🌼',s:'Kytička',t:'kytičku',z:'jl'},
+    {e:'🌻',s:'Pampeliška',t:'pampelišku',z:'jl'},
+    {e:'🍃',s:'Lístek',t:'zelený lísteček',z:'jl'},
+    {e:'🍁',s:'Listí',t:'hromádku spadaného listí',z:'p'},
+    {e:'🪨',s:'Kámen',t:'pěkný kámen',z:A},
+    {e:'🌳',s:'Strom',t:'velký strom',z:A},
+    {e:'☁️',s:'Mrak',t:'mrak na nebi',z:A},
+    {e:'🤏',s:'Malé',t:'něco hodně malého',z:A},
+    {e:'🐘',s:'Velké',t:'něco obrovského',z:A},
+    {e:'⚽',s:'Kulaté',t:'něco kulatého',z:A},
+    {e:'🌲',s:'Šiška',t:'šišku',z:A},
+    {e:'🪵',s:'Klacík',t:'zajímavý klacík',z:A},
+    {e:'🎄',s:'Jehličí',t:'jehličí',z:A},
+    {e:'🌾',s:'Tráva',t:'vysokou trávu',z:'jl'},
+    {e:'🌤️',s:'Slunce',t:'sluníčko mezi stromy',z:'jl'},
+    {e:'🥾',s:'Cesta',t:'lesní cestu',z:A},
+    {e:'💦',s:'Louže',t:'louži',z:'jp'},
+    {e:'☃️',s:'Sníh',t:'sníh',z:'z'},
+    {e:'🧊',s:'Rampouch',t:'rampouch nebo led',z:'z'},
+    {e:'🌬️',s:'Pára',t:'svůj dech v mrazu (páru od pusy)',z:'z'}
   ],
   2:[
-    {e:'🟣',s:'Fialové',t:'něco fialového'},
-    {e:'🟠',s:'Oranžové',t:'něco oranžového'},
-    {e:'🐞',s:'Brouček',t:'broučka'},
-    {e:'🐦',s:'Ptáček',t:'ptáčka'},
-    {e:'🪶',s:'Pírko',t:'pírko'},
-    {e:'🍄',s:'Houba',t:'houbu (jen fotit, nesahat!)'},
-    {e:'🕸️',s:'Pavučina',t:'pavučinu'},
-    {e:'👣',s:'Stopa',t:'stopu v blátě nebo písku'},
-    {e:'💧',s:'Voda',t:'vodu – potok, louži nebo kapku'},
-    {e:'🌿',s:'Mech',t:'mech'},
-    {e:'✌️',s:'Ypsilon',t:'větvičku ve tvaru Y'},
-    {e:'❤️',s:'Srdíčko',t:'něco ve tvaru srdíčka'},
-    {e:'🌰',s:'Plod',t:'žalud, kaštan nebo oříšek'},
-    {e:'🦔',s:'Pichlavé',t:'něco pichlavého nebo hrbolatého'}
+    {e:'🟣',s:'Fialové',t:'něco fialového',z:'jl'},
+    {e:'🟠',s:'Oranžové',t:'něco oranžového',z:'lp'},
+    {e:'🐞',s:'Brouček',t:'broučka',z:'jl'},
+    {e:'🐦',s:'Ptáček',t:'ptáčka',z:A},
+    {e:'🪶',s:'Pírko',t:'pírko',z:A},
+    {e:'🍄',s:'Houba',t:'houbu (jen fotit, nesahat!)',z:'lp'},
+    {e:'🕸️',s:'Pavučina',t:'pavučinu',z:'jlp'},
+    {e:'👣',s:'Stopa',t:'stopu v blátě, písku nebo sněhu',z:A},
+    {e:'💧',s:'Potok',t:'potok nebo tekoucí vodu',z:'jlp'},
+    {e:'🌿',s:'Mech',t:'mech',z:A},
+    {e:'✌️',s:'Ypsilon',t:'větvičku ve tvaru Y',z:A},
+    {e:'❤️',s:'Srdíčko',t:'něco ve tvaru srdíčka',z:A},
+    {e:'🌰',s:'Plody',t:'žalud, kaštan nebo oříšek',z:'p'},
+    {e:'🦔',s:'Pichlavé',t:'něco pichlavého',z:A},
+    {e:'🌱',s:'Pupen',t:'pupen na větvičce',z:'zj'},
+    {e:'🍂',s:'Barevný list',t:'červený nebo žlutý list',z:'p'},
+    {e:'🫐',s:'Bobule',t:'bobule (jen fotit, nejíst!)',z:'lp'},
+    {e:'🌹',s:'Šípek',t:'šípek',z:'pz'},
+    {e:'🌲',s:'Dva stromy',t:'jehličnatý a listnatý strom vedle sebe',z:A},
+    {e:'🪵',s:'Pařez',t:'pařez',z:A},
+    {e:'🕳️',s:'Dutina',t:'díru ve stromě',z:A},
+    {e:'🌳',s:'Kůra',t:'kůru stromu zblízka',z:A},
+    {e:'🏠',s:'Krmítko',t:'krmítko nebo ptačí budku',z:'pz'},
+    {e:'🧊',s:'Led',t:'zamrzlou vodu',z:'z'},
+    {e:'🌸',s:'Květy',t:'rozkvetlý strom nebo keř',z:'j'},
+    {e:'🌿',s:'Kapradí',t:'kapradinu',z:'jl'},
+    {e:'🐜',s:'Mraveniště',t:'mraveniště',z:'jlp'},
+    {e:'🌫️',s:'Mlha',t:'mlhu nebo opar',z:'pz'}
   ],
   3:[
-    {e:'🦋',s:'Motýl',t:'motýla nebo můru'},
-    {e:'🐌',s:'Šnek',t:'šneka nebo slimáka'},
-    {e:'🐿️',s:'Zvíře',t:'zvíře (ne psa ani kočku!)'},
-    {e:'🦅',s:'V letu',t:'ptáka v letu'},
-    {e:'😀',s:'Obličej',t:'něco, co vypadá jako obličej'},
-    {e:'🔤',s:'Písmeno',t:'písmeno, které vytvořila příroda'},
-    {e:'🌈',s:'Duha',t:'5 různých barev na jedné fotce'},
-    {e:'🐜',s:'Mravenci',t:'mraveniště nebo mravenčí cestičku'},
-    {e:'🪞',s:'Odraz',t:'odraz ve vodě'},
-    {e:'🌗',s:'Stín',t:'zajímavý stín'},
-    {e:'🔍',s:'Detail',t:'detail kůry, listu nebo kamene úplně zblízka'},
-    {e:'3️⃣',s:'Trojice',t:'tři stejné věci vedle sebe'},
-    {e:'🌸',s:'Mini kytka',t:'nejmenší kytičku, jakou najdeš'},
-    {e:'🦗',s:'Hmyz',t:'hmyz, který není brouk'}
+    {e:'🦋',s:'Motýl',t:'motýla',z:'jl'},
+    {e:'🐝',s:'Včela',t:'včelu nebo čmeláka',z:'jl'},
+    {e:'🐌',s:'Šnek',t:'šneka nebo slimáka',z:'jlp'},
+    {e:'🐿️',s:'Zvíře',t:'divoké zvíře (ne psa ani kočku!)',z:A},
+    {e:'🦅',s:'V letu',t:'ptáka v letu',z:A},
+    {e:'😀',s:'Obličej',t:'něco, co vypadá jako obličej',z:A},
+    {e:'🔤',s:'Písmeno',t:'písmeno, které vytvořila příroda',z:A},
+    {e:'🌈',s:'5 barev',t:'5 různých barev na jedné fotce',z:'jlp'},
+    {e:'🐜',s:'Mravenci',t:'mravenčí cestičku',z:'jl'},
+    {e:'🪞',s:'Odraz',t:'odraz ve vodě',z:'jlp'},
+    {e:'🌗',s:'Stín',t:'zajímavý stín',z:A},
+    {e:'🔍',s:'Detail',t:'detail kůry, listu nebo kamene úplně zblízka',z:A},
+    {e:'3️⃣',s:'Trojice',t:'tři stejné věci vedle sebe',z:A},
+    {e:'🌸',s:'Mini kytka',t:'nejmenší kytičku, jakou najdeš',z:'jl'},
+    {e:'🦗',s:'Hmyz',t:'hmyz, který není brouk',z:'jl'},
+    {e:'🐸',s:'Žába',t:'žábu nebo ještěrku',z:'jl'},
+    {e:'💧',s:'Kapka',t:'kapku vody nebo rosu',z:'jlp'},
+    {e:'🌅',s:'Západ',t:'západ slunce',z:A},
+    {e:'🌳',s:'Holý strom',t:'strom úplně bez listí',z:'pz'},
+    {e:'🪺',s:'Hnízdo',t:'ptačí hnízdo',z:'pz'},
+    {e:'🍁',s:'Dvoubarevný',t:'list, který má aspoň dvě barvy',z:'p'},
+    {e:'🐾',s:'Stopy',t:'stopy zvířete ve sněhu',z:'z'},
+    {e:'❄️',s:'Jinovatka',t:'jinovatku nebo námrazu',z:'z'},
+    {e:'🔬',s:'Vločka',t:'sněhovou vločku zblízka',z:'z'},
+    {e:'🫧',s:'Ledová louže',t:'zamrzlou louži s bublinkami',z:'z'},
+    {e:'🍄',s:'Choroš',t:'houbu rostoucí na stromě',z:A},
+    {e:'🪓',s:'Datel',t:'datla nebo díry, které vyťukal',z:A},
+    {e:'🐱',s:'Kočičky',t:'kočičky na vrbě',z:'j'},
+    {e:'🦌',s:'Srnka',t:'stopu srnky nebo jelena',z:A}
   ]
 };
 
 const FUN = [
-  'Mise splněna! 🕵️',
-  'Fotograf roku: {n}! 🏆',
-  'Tohle by nenašel ani Sherlock! 🔎',
-  'Hledáno, nalezeno, vyfoceno! ✅',
-  'Úlovek dne! 🎣',
-  'Příroda děkuje za spolupráci 🌍',
-  'Ostré jako břitva! ⚡',
-  'National Geographic už volá! 📞',
-  'Tohle si dáme do rámečku 🖼️',
-  'Bez šance, máme tě! 😎',
-  '{n} je prostě borec! 💪',
-  'Jedna fotka, tisíc slov 📸'
+  'Mise splněna! 🕵️','Fotograf roku: {n}! 🏆','Tohle by nenašel ani Sherlock! 🔎','Hledáno, nalezeno, vyfoceno! ✅',
+  'Úlovek dne! 🎣','Příroda děkuje za spolupráci 🌍','Ostré jako břitva! ⚡','National Geographic už volá! 📞',
+  'Tohle si dáme do rámečku 🖼️','Bez šance, máme tě! 😎','{n} je prostě borec! 💪','Jedna fotka, tisíc slov 📸',
+  'Oko sokola! 🦅','Kdo hledá, najde! 🗺️','Profík s foťákem 📷','Lepší než mapa! 🧭',
+  'Kapitán výpravy hlásí: mám to! 🫡','Wow, to je kousek! 🤩','Tohle se počítá! ✔️','Hvězda výpravy! 🌟'
 ];
 
 const SEG_COLORS = ['#ff4f8b','#ffb703','#3b82f6','#22c55e','#a855f7','#ff7a1a','#06b6d4','#ef4444','#84cc16','#ec4899','#f59e0b','#6366f1'];
@@ -235,6 +296,8 @@ if(!profiles){
   ];
   LS.set('fl_profiles', profiles);
 }
+profiles.forEach(p=>{ if(!p.nphotos) p.nphotos=4; if(!p.season) p.season=currentSeason(); });
+LS.set('fl_profiles', profiles);
 const saveProfiles = ()=> LS.set('fl_profiles', profiles);
 const getProfile = id => profiles.find(p=>p.id===id);
 
@@ -335,30 +398,57 @@ function shutter(){
 }
 
 /* ================== GAME STATE ================== */
-// game: {pid, level, segs:[task], drawn:[task], joker:1, phase:'spin'|'photo'}
+// game: {pid, level, season, n, pool:[task], drawn:[task], joker, phase:'spin'|'photo'}
 // photos in IndexedDB: 'ph_'+pid+'_'+i  -> {src, ok:boolean}
-let game=null, photos=[null,null,null,null], current=null, screen='profiles';
+let game=null, photos=[], current=null, screen='profiles';
 const gameKey = pid => 'fl_game_'+pid;
 
+function buildPool(level,season){
+  const ok = t => season==='m' || t.z.includes(season);
+  const order = level===1?[1,2,3]:level===2?[2,1,3]:[3,2,1];   // nejdřív úkoly zvolené obtížnosti
+  let pool=[]; for(const l of order) pool=pool.concat(shuffle(TASKS[l].filter(ok)));
+  return pool.map((t,i)=>({e:t.e,s:t.s,t:t.t,c:i%SEG_COLORS.length}));
+}
+const jokersFor = n => 1+Math.floor((n-4)/4);
 function newGame(p){
-  const L=p.level;
-  let segs;
-  if(L===1) segs=shuffle(TASKS[1]).slice(0,12);
-  else segs=shuffle(shuffle(TASKS[L]).slice(0,8).concat(shuffle(TASKS[L-1]).slice(0,4)));
-  game={pid:p.id, level:L, segs, drawn:[], joker:1, phase:'spin'};
-  photos=[null,null,null,null];
+  const n=p.nphotos;
+  game={pid:p.id, level:p.level, season:p.season, n, pool:buildPool(p.level,p.season), drawn:[], joker:jokersFor(n), phase:'spin'};
+  photos=new Array(n).fill(null);
   LS.set(gameKey(p.id),game);
-  for(let i=0;i<4;i++) DB.del('ph_'+p.id+'_'+i);
+  for(let i=0;i<MAX_PHOTOS;i++) DB.del('ph_'+p.id+'_'+i);
 }
 async function loadGame(p){
   const g=LS.get(gameKey(p.id),null);
-  if(g && g.level===p.level && g.drawn){
-    game=g;
-    photos=[];
-    for(let i=0;i<4;i++) photos.push(await dbGet('ph_'+p.id+'_'+i) || null);
+  if(g && g.pool && g.level===p.level && g.season===p.season && g.n===p.nphotos){
+    game=g; photos=[];
+    for(let i=0;i<g.n;i++) photos.push(await dbGet('ph_'+p.id+'_'+i) || null);
   } else newGame(p);
 }
 const saveGame=()=>LS.set(gameKey(game.pid),game);
+
+/* nastavení výpravy (obtížnost, období, počet fotek) – v profilu i před losováním */
+function settingsHtml(p){
+  return `
+    <label class="l">Obtížnost:</label>
+    <div class="levels">${[1,2,3].map(l=>`<button class="lvl ${p.level===l?'sel':''}" data-l="${l}"><span class="e">${LEVELS[l].emoji}</span>${LEVELS[l].name}</button>`).join('')}</div>
+    <label class="l">Roční období:</label>
+    <div class="seasons">${SEASON_ORDER.map(k=>{const S=SEASONS[k];return `<button class="lvl ${p.season===k?'sel':''} ${S.hard?'hard':''}" data-s="${k}"><span class="e">${S.e}</span><span>${S.name}${S.hard?'<small>nejtěžší – všechna roční období</small>':''}</span></button>`}).join('')}</div>
+    <label class="l">Počet fotek:</label>
+    <div class="stepper">
+      <button data-step="-1" ${p.nphotos<=MIN_PHOTOS?'disabled':''} aria-label="Méně">−</button>
+      <div class="val"><b>${p.nphotos}</b><span>${p.nphotos<5?'fotky':'fotek'} (${MIN_PHOTOS}–${MAX_PHOTOS})</span></div>
+      <button data-step="1" ${p.nphotos>=MAX_PHOTOS?'disabled':''} aria-label="Více">+</button>
+    </div>`;
+}
+function mountSettings(el,p,onChange){
+  el.innerHTML=settingsHtml(p);
+  el.querySelectorAll('[data-l]').forEach(b=>b.onclick=()=>{p.level=+b.dataset.l; onChange(); mountSettings(el,p,onChange);});
+  el.querySelectorAll('[data-s]').forEach(b=>b.onclick=()=>{p.season=b.dataset.s; onChange(); mountSettings(el,p,onChange);});
+  el.querySelectorAll('[data-step]').forEach(b=>b.onclick=()=>{
+    p.nphotos=Math.min(MAX_PHOTOS,Math.max(MIN_PHOTOS,p.nphotos + +b.dataset.step)); tick(); onChange(); mountSettings(el,p,onChange);
+  });
+}
+function seasonBadge(k){const S=SEASONS[k];return `<span class="badge" style="background:${S.color}">${S.e} ${S.name}</span>`}
 
 /* ================== SCREENS ================== */
 function render(html){ $app.innerHTML=html; window.scrollTo(0,0); }
@@ -375,6 +465,7 @@ function showProfiles(){
           ${avatarHtml(p)}
           <div class="pname">${esc(p.name)}</div>
           ${levelBadge(p.level)}
+          <div class="stars">${SEASONS[p.season].e} ${SEASONS[p.season].name} · 📸 ${p.nphotos}</div>
           <div class="stars">⭐ ${p.stars} · 🖼️ ${p.count}</div>
         </div>`).join('')}
       <div class="pcard addp" id="addp">➕<br>Nový hráč</div>
@@ -389,7 +480,7 @@ function showProfiles(){
 
 function showEdit(id){
   screen='edit';
-  const p = id ? {...getProfile(id)} : {id:null,name:'',emoji:AVATAR_EMOJIS[Math.floor(Math.random()*AVATAR_EMOJIS.length)],avatar:null,level:1,stars:0,count:0};
+  const p = id ? {...getProfile(id)} : {id:null,name:'',emoji:AVATAR_EMOJIS[Math.floor(Math.random()*AVATAR_EMOJIS.length)],avatar:null,level:1,season:currentSeason(),nphotos:4,stars:0,count:0};
   render(`
     <div class="top"><button class="iconbtn" id="back">←</button><h1>${id?'Upravit hráče':'Nový hráč'}</h1></div>
     <div class="card">
@@ -404,8 +495,7 @@ function showEdit(id){
       <div class="emojis">${AVATAR_EMOJIS.map(e=>`<button data-e="${e}" class="${!p.avatar&&p.emoji===e?'sel':''}">${e}</button>`).join('')}</div>
       <label class="l">Jméno:</label>
       <input class="txt" id="nm" maxlength="16" value="${esc(p.name)}" placeholder="Jak se jmenuješ?">
-      <label class="l">Obtížnost:</label>
-      <div class="levels">${[1,2,3].map(l=>`<button class="lvl ${p.level===l?'sel':''}" data-l="${l}"><span class="e">${LEVELS[l].emoji}</span>${LEVELS[l].name}</button>`).join('')}</div>
+      <div id="settings"></div>
     </div>
     <button class="btn green" id="save">✅ Uložit</button>
     ${id && profiles.length>1?`<button class="btn ghost" id="del" style="margin-top:12px">🗑️ Smazat hráče</button>`:''}
@@ -416,7 +506,7 @@ function showEdit(id){
   document.getElementById('avcam').onclick=()=>setAv(true);
   document.getElementById('avgal').onclick=()=>setAv(false);
   $app.querySelectorAll('.emojis button').forEach(b=>b.onclick=()=>{p.emoji=b.dataset.e; p.avatar=null; refreshAv(); $app.querySelectorAll('.emojis button').forEach(x=>x.classList.toggle('sel',x===b));});
-  $app.querySelectorAll('.lvl').forEach(b=>b.onclick=()=>{p.level=+b.dataset.l; $app.querySelectorAll('.lvl').forEach(x=>x.classList.toggle('sel',x===b));});
+  mountSettings(document.getElementById('settings'),p,()=>{});
   document.getElementById('save').onclick=()=>{
     p.name=document.getElementById('nm').value.trim();
     if(!p.name){toast('Napiš jméno 🙂');return;}
@@ -442,27 +532,38 @@ let wheel={rot:0, spinning:false, raf:0};
 function showSpin(){
   screen='spin';
   const p=current;
+  const started=game.drawn.length>0;
   render(`
     <div class="top">
       <button class="iconbtn" id="back">←</button>
       <h1>Losování</h1>
       <button class="iconbtn" id="alb" aria-label="Album">🖼️</button>
     </div>
-    <div class="who">${avatarHtml(p)}<b>${esc(p.name)}</b><span style="flex:1"></span>${levelBadge(p.level)}</div>
+    <div class="who">${avatarHtml(p)}<b>${esc(p.name)}</b><span style="flex:1"></span>
+      <div class="badges">${levelBadge(game.level)}${seasonBadge(game.season)}</div></div>
     <div class="wheelwrap">
       <div class="pointer" id="ptr"><svg viewBox="0 0 44 58"><path d="M22 56 L4 14 A18 18 0 1 1 40 14 Z" fill="#fff"/><path d="M22 48 L9 15 A13 13 0 1 1 35 15 Z" fill="#ff2d55"/><circle cx="22" cy="14" r="5" fill="#fff"/></svg></div>
       <canvas id="wheel"></canvas>
       <div class="hub">📸</div>
     </div>
     <div id="spinarea"></div>
+    ${started?'':`<div class="card setup"><h2>⚙️ Nastavení výpravy</h2><div id="setup"></div></div>`}
     <div class="slots" id="slots"></div>
   `);
   document.getElementById('back').onclick=()=>{ if(!wheel.spinning) showProfiles(); };
   document.getElementById('alb').onclick=()=>{ if(!wheel.spinning) showAlbum(); };
+  if(!started){
+    mountSettings(document.getElementById('setup'),p,()=>{
+      saveProfiles(); newGame(p);
+      const y=window.scrollY; sizeWheel(); drawWheel(); renderSlots(); renderSpinArea();
+      document.querySelector('.who .badges').innerHTML=levelBadge(game.level)+seasonBadge(game.season);
+      window.scrollTo(0,y);
+    });
+  }
   wheel.rot = Math.random()*Math.PI*2;
   sizeWheel(); drawWheel(); renderSlots(); renderSpinArea();
 }
-function remainingSegs(){ const used=new Set(game.drawn.map(t=>t.t)); return game.segs.filter(s=>!used.has(s.t)); }
+const visibleSegs = () => game.pool.slice(0,12);
 function sizeWheel(){
   const c=document.getElementById('wheel'); if(!c) return;
   const r=c.getBoundingClientRect(); const dpr=Math.min(window.devicePixelRatio||1,3);
@@ -471,20 +572,20 @@ function sizeWheel(){
 function drawWheel(){
   const c=document.getElementById('wheel'); if(!c) return;
   const x=c.getContext('2d'); const W=c.width, R=W/2, cx=R, cy=R;
-  const segs=remainingSegs(); const n=segs.length; const a=Math.PI*2/n;
+  const segs=visibleSegs(); const n=segs.length; if(!n) return; const a=Math.PI*2/n;
   x.clearRect(0,0,W,W);
-  // rim
   x.beginPath(); x.arc(cx,cy,R*0.995,0,Math.PI*2); x.fillStyle='#2b1d6b'; x.fill();
   const r=R*0.90;
   for(let i=0;i<n;i++){
     const st=wheel.rot+i*a;
     x.beginPath(); x.moveTo(cx,cy); x.arc(cx,cy,r,st,st+a); x.closePath();
-    x.fillStyle=SEG_COLORS[(game.segs.indexOf(segs[i]))%SEG_COLORS.length]; x.fill();
+    let col=SEG_COLORS[segs[i].c % SEG_COLORS.length];
+    if(i>0 && SEG_COLORS[segs[i-1].c % SEG_COLORS.length]===col) col=SEG_COLORS[(segs[i].c+5)%SEG_COLORS.length];
+    x.fillStyle=col; x.fill();
     x.lineWidth=R*0.012; x.strokeStyle='rgba(255,255,255,.9)'; x.stroke();
-    // label
     x.save(); x.translate(cx,cy); x.rotate(st+a/2);
     x.textAlign='right'; x.textBaseline='middle';
-    const fs=Math.max(R*0.062, Math.min(R*0.085, R*0.9/n*1.0));
+    const fs=Math.max(R*0.062, Math.min(R*0.085, R*0.9/n));
     x.font=`900 ${fs}px "Trebuchet MS",Roboto,sans-serif`;
     x.fillStyle='#fff'; x.shadowColor='rgba(0,0,0,.35)'; x.shadowBlur=R*0.012; x.shadowOffsetY=R*0.006;
     x.fillText(segs[i].s, r*0.80, 0);
@@ -492,7 +593,6 @@ function drawWheel(){
     x.font=`${fs*1.25}px sans-serif`; x.fillText(segs[i].e, r*0.97, 0);
     x.restore();
   }
-  // pegs (cvakací kolíčky)
   for(let i=0;i<n;i++){
     const ang=wheel.rot+i*a; const px=cx+Math.cos(ang)*R*0.945, py=cy+Math.sin(ang)*R*0.945;
     x.beginPath(); x.arc(px,py,R*0.025,0,Math.PI*2); x.fillStyle='#ffd23f'; x.fill(); x.lineWidth=R*0.006; x.strokeStyle='#b07d00'; x.stroke();
@@ -504,42 +604,42 @@ function segIndexAtPointer(rot,n){
 }
 function renderSlots(){
   const el=document.getElementById('slots'); if(!el) return;
-  el.innerHTML=[0,1,2,3].map(i=>{
+  let h='';
+  for(let i=0;i<game.n;i++){
     const t=game.drawn[i];
-    return t?`<div class="slot full"><span class="n">${i+1}</span><span class="e">${t.e}</span><span>${esc(cap(t.t))}</span></div>`
-            :`<div class="slot"><span class="n">${i+1}</span><span>?</span></div>`;
-  }).join('');
+    h+= t?`<div class="slot full"><span class="n">${i+1}</span><span class="e">${t.e}</span><span>${esc(cap(t.t))}</span></div>`
+         :`<div class="slot"><span class="n">${i+1}</span><span>?</span></div>`;
+  }
+  el.innerHTML=h;
 }
 const cap = s => s.charAt(0).toUpperCase()+s.slice(1);
 function renderSpinArea(){
   const el=document.getElementById('spinarea'); if(!el) return;
-  const k=game.drawn.length;
-  if(k<4){
-    el.innerHTML=`<button class="btn pink" id="spin" style="font-size:26px;padding:18px">🎡 ZATOČ! <small style="font-size:16px;opacity:.9">(${k+1}/4)</small></button>
-      ${k>0 && game.joker>0?`<button class="btn ghost small joker" id="jok">🃏 Žolík: přelosovat poslední úkol (máš ${game.joker}×)</button>`:''}`;
+  const k=game.drawn.length, n=game.n;
+  const jok = k>0 && game.joker>0 ? `<button class="btn ghost small joker" id="jok">🃏 Žolík: přelosovat poslední úkol (zbývá ${game.joker}×)</button>` : '';
+  if(k<n){
+    el.innerHTML=`<button class="btn pink" id="spin" style="font-size:26px;padding:18px">🎡 ZATOČ! <small style="font-size:16px;opacity:.9">(${k+1}/${n})</small></button>${jok}`;
     document.getElementById('spin').onclick=spin;
-    const j=document.getElementById('jok'); if(j) j.onclick=useJoker;
   } else {
-    el.innerHTML=`<button class="btn green" id="go" style="font-size:24px;padding:18px">📸 Jdu fotit!</button>
-      ${game.joker>0?`<button class="btn ghost small joker" id="jok">🃏 Žolík: přelosovat poslední úkol</button>`:''}`;
+    el.innerHTML=`<button class="btn green" id="go" style="font-size:24px;padding:18px">📸 Jdu fotit!</button>${jok}`;
     document.getElementById('go').onclick=()=>{game.phase='photo';saveGame();showPhotos();};
-    const j=document.getElementById('jok'); if(j) j.onclick=useJoker;
   }
+  const j=document.getElementById('jok'); if(j) j.onclick=useJoker;
 }
 function useJoker(){
   if(wheel.spinning||game.joker<1||!game.drawn.length) return;
-  const removed=game.drawn.pop(); game.joker--;
-  // vyřadit přelosovaný úkol z kola úplně
-  game.segs=game.segs.filter(s=>s.t!==removed.t);
+  const removed=game.drawn.pop(); game.joker--;   // úkol už v kole není, tím je vyřazený
   saveGame(); drawWheel(); renderSlots(); renderSpinArea();
   toast('🃏 Úkol „'+removed.s+'“ je pryč. Zatoč znovu!');
+  if(game.drawn.length===0) showSpin();
 }
 function spin(){
   if(wheel.spinning) return;
   audio();
-  const segs=remainingSegs(); const n=segs.length; if(!n) return;
+  const segs=visibleSegs(); const n=segs.length; if(!n){ toast('Došly úkoly 🙈'); return; }
   wheel.spinning=true;
   document.getElementById('spin').disabled=true; const j=document.getElementById('jok'); if(j) j.disabled=true;
+  document.querySelectorAll('.setup button').forEach(b=>b.disabled=true);
   const start=wheel.rot;
   const target=start + Math.PI*2*(5+Math.random()*3) + Math.random()*Math.PI*2;
   const dur=5200+Math.random()*1800;
@@ -561,23 +661,29 @@ function spin(){
   wheel.raf=requestAnimationFrame(frame);
 }
 function landed(task){
+  const first=game.drawn.length===0;
+  game.pool.splice(game.pool.indexOf(task),1);
   game.drawn.push(task); saveGame();
   fanfare(); vibrate(60);
   const ov=document.createElement('div'); ov.className='result';
-  ov.innerHTML=`<div class="box"><div style="font-weight:800;color:#6b6790">${game.drawn.length}. úkol – vyfoť:</div><div class="em">${task.e}</div><div class="t">${esc(cap(task.t))}</div><button class="btn green">👍 Jasně!</button></div>`;
+  ov.innerHTML=`<div class="box"><div style="font-weight:800;color:#6b6790">${game.drawn.length}. úkol z ${game.n} – vyfoť:</div><div class="em">${task.e}</div><div class="t">${esc(cap(task.t))}</div><button class="btn green">👍 Jasně!</button></div>`;
   document.body.appendChild(ov);
-  const close=()=>{ov.remove(); drawWheel(); renderSlots(); renderSpinArea(); if(game.drawn.length===4) confetti(25);};
+  const close=()=>{
+    ov.remove();
+    if(first){ const r=wheel.rot; showSpin(); wheel.rot=r; drawWheel(); return; }   // schová nastavení
+    drawWheel(); renderSlots(); renderSpinArea(); if(game.drawn.length===game.n) confetti(25);
+  };
   ov.querySelector('button').onclick=close; ov.onclick=e=>{if(e.target===ov) close();};
 }
 
 /* ---------- PHOTOS ---------- */
 function showPhotos(){
   screen='photo';
-  const p=current;
+  const n=game.n;
   const done=photos.filter(x=>x&&x.ok).length;
   render(`
-    <div class="top"><button class="iconbtn" id="back">←</button><h1>Foť! 📸</h1><span style="color:#fff;font-weight:900;font-size:20px">${done}/4</span></div>
-    <div class="progress"><div style="width:${done*25}%"></div></div>
+    <div class="top"><button class="iconbtn" id="back">←</button><h1>Foť! 📸</h1><span style="color:#fff;font-weight:900;font-size:20px">${done}/${n}</span></div>
+    <div class="progress"><div style="width:${done/n*100}%"></div></div>
     ${game.drawn.map((t,i)=>{
       const ph=photos[i];
       let body;
@@ -586,8 +692,8 @@ function showPhotos(){
       else body=`<div class="preview"><img src="${ph.src}"><span class="ok">✓ Hotovo</span></div><button class="btn ghost small" style="background:#eceaf6;color:#24204a" data-redo="${i}">🔄 Změnit fotku</button>`;
       return `<div class="task ${ph&&ph.ok?'done':''}"><h3><span class="n">${i+1}</span><span class="e">${t.e}</span><span>Vyfoť ${esc(t.t)}</span></h3>${body}</div>`;
     }).join('')}
-    <button class="btn yellow" id="fin" ${done<4?'disabled':''} style="font-size:22px;padding:18px">🎉 Mám všechny 4!</button>
-    ${done<4?`<div class="hint">Až budou všechny 4 fotky zelené, udělám z nich koláž 🖼️</div>`:''}
+    <button class="btn yellow" id="fin" ${done<n?'disabled':''} style="font-size:22px;padding:18px">🎉 Mám ${n<5?'všechny':'všech'} ${n}!</button>
+    ${done<n?`<div class="hint">Až budou všechny fotky zelené, udělám z nich koláž 🖼️</div>`:''}
   `);
   document.getElementById('back').onclick=()=>showProfiles();
   $app.querySelectorAll('[data-cam]').forEach(b=>b.onclick=()=>takePhoto(+b.dataset.cam,true));
@@ -595,13 +701,14 @@ function showPhotos(){
   $app.querySelectorAll('[data-ok]').forEach(b=>b.onclick=async()=>{
     const i=+b.dataset.ok; photos[i].ok=true; await DB.set('ph_'+game.pid+'_'+i,photos[i]);
     vibrate(40); fanfareSmall(); const y=window.scrollY; showPhotos(); window.scrollTo(0,y);
-    if(photos.every(x=>x&&x.ok)) { confetti(30); setTimeout(()=>document.getElementById('fin')?.scrollIntoView({behavior:'smooth',block:'center'}),300); }
+    if(allDone()) { confetti(30); setTimeout(()=>document.getElementById('fin')?.scrollIntoView({behavior:'smooth',block:'center'}),300); }
   });
   $app.querySelectorAll('[data-redo]').forEach(b=>b.onclick=async()=>{
     const i=+b.dataset.redo; photos[i]=null; await DB.del('ph_'+game.pid+'_'+i); const y=window.scrollY; showPhotos(); window.scrollTo(0,y);
   });
   document.getElementById('fin').onclick=finish;
 }
+const allDone = () => photos.length===game.n && photos.every(x=>x&&x.ok);
 function fanfareSmall(){
   const a=audio(); if(!a) return; const t=a.currentTime;
   [784,1175].forEach((f,i)=>{const o=a.createOscillator(),g=a.createGain();o.type='sine';o.frequency.value=f;g.gain.setValueAtTime(0.0001,t+i*.09);g.gain.exponentialRampToValueAtTime(.25,t+i*.09+.02);g.gain.exponentialRampToValueAtTime(.0001,t+i*.09+.25);o.connect(g).connect(a.destination);o.start(t+i*.09);o.stop(t+i*.09+.3);});
@@ -625,88 +732,83 @@ function wrap(x,text,maxW){
   for(const w of words){ const t=line?line+' '+w:w; if(x.measureText(t).width>maxW && line){lines.push(line);line=w;} else line=t; }
   if(line) lines.push(line); return lines;
 }
-async function buildCollage(p,tasks,srcs){
-  const W=1080,H=1820; const c=document.createElement('canvas'); c.width=W; c.height=H; const x=c.getContext('2d');
+async function buildCollage(p,g,srcs,earned){
+  const tasks=g.drawn, n=tasks.length;
+  const cols=n<=4?2:n<=9?3:4, rows=Math.ceil(n/cols);
+  const cw=480, ch=680, gap=40, mx=40, gy=200, footH=170;
+  const W=mx*2+cols*cw+(cols-1)*gap;
+  const gridBottom=gy+rows*ch+(rows-1)*gap;
+  const H=gridBottom+30+footH+30;
+  const c=document.createElement('canvas'); c.width=W; c.height=H; const x=c.getContext('2d');
   const F='"Trebuchet MS",Roboto,"Noto Sans",sans-serif';
-  // background
-  const g=x.createLinearGradient(0,0,W,H); g.addColorStop(0,'#2b1d6b'); g.addColorStop(.5,'#5b2a9b'); g.addColorStop(1,'#0f6e6a');
-  x.fillStyle=g; x.fillRect(0,0,W,H);
-  // dots
-  x.globalAlpha=.08; x.fillStyle='#fff'; for(let i=0;i<70;i++){x.beginPath();x.arc(Math.random()*W,Math.random()*H,4+Math.random()*16,0,7);x.fill();} x.globalAlpha=1;
-  // header
+  const L=LEVELS[g.level], S=SEASONS[g.season];
+  const grd=x.createLinearGradient(0,0,W,H); grd.addColorStop(0,'#2b1d6b'); grd.addColorStop(.5,'#5b2a9b'); grd.addColorStop(1,'#0f6e6a');
+  x.fillStyle=grd; x.fillRect(0,0,W,H);
+  x.globalAlpha=.08; x.fillStyle='#fff'; for(let i=0;i<40*cols*rows/4+30;i++){x.beginPath();x.arc(Math.random()*W,Math.random()*H,4+Math.random()*16,0,7);x.fill();} x.globalAlpha=1;
   x.textAlign='center'; x.fillStyle='#fff'; x.font=`900 74px ${F}`;
   x.shadowColor='rgba(0,0,0,.3)'; x.shadowOffsetY=5;
   x.fillText('📸 FotoLov', W/2, 100);
   x.shadowOffsetY=0; x.shadowColor='transparent';
-  const L=LEVELS[game.level];
   const d=new Date(); const ds=d.getDate()+'. '+(d.getMonth()+1)+'. '+d.getFullYear();
   x.font=`700 34px ${F}`; x.fillStyle='#ffd23f';
-  x.fillText(`Fotovýprava: ${p.name} · ${ds}`, W/2, 156);
-  // cards
+  x.fillText(`Fotovýprava: ${p.name} · ${S.e} ${S.name} · ${ds}`, W/2, 156);
   const fun=shuffle(FUN);
-  const cw=480, ch=680, gx=40, gy=200, gapx=40, gapy=40;
-  for(let i=0;i<4;i++){
-    const col=i%2,row=Math.floor(i/2);
-    const X=gx+col*(cw+gapx), Y=gy+row*(ch+gapy);
+  for(let i=0;i<n;i++){
+    const row=Math.floor(i/cols), col=i%cols;
+    const inRow = row===rows-1 ? n-row*cols : cols;
+    const off=(cols-inRow)*(cw+gap)/2;
+    const X=mx+off+col*(cw+gap), Y=gy+row*(ch+gap);
     x.save();
     x.translate(X+cw/2,Y+ch/2); x.rotate((i%3===0?-1:1)*(1.2+Math.random()*1.3)*Math.PI/180); x.translate(-cw/2,-ch/2);
     x.shadowColor='rgba(0,0,0,.35)'; x.shadowBlur=24; x.shadowOffsetY=10;
     rr(x,0,0,cw,ch,22); x.fillStyle='#fff'; x.fill();
     x.shadowColor='transparent';
-    // photo (cover crop)
     const ps=448, px=16, py=16;
     const img=await loadImg(srcs[i]);
-    const s=Math.max(ps/img.naturalWidth, ps/img.naturalHeight);
-    const sw=ps/s, sh=ps/s, sx=(img.naturalWidth-sw)/2, sy=(img.naturalHeight-sh)/2;
+    const sc=Math.max(ps/img.naturalWidth, ps/img.naturalHeight);
+    const sw=ps/sc, sh=ps/sc, sx=(img.naturalWidth-sw)/2, sy=(img.naturalHeight-sh)/2;
     x.save(); rr(x,px,py,ps,ps,14); x.clip(); x.drawImage(img,sx,sy,sw,sh,px,py,ps,ps); x.restore();
-    // number bubble
     x.beginPath(); x.arc(px+40,py+40,30,0,7); x.fillStyle='#ffd23f'; x.fill(); x.lineWidth=5; x.strokeStyle='#fff'; x.stroke();
-    x.fillStyle='#24204a'; x.font=`900 34px ${F}`; x.textAlign='center'; x.textBaseline='middle'; x.fillText(String(i+1),px+40,py+42);
-    // emoji bubble
+    x.fillStyle='#24204a'; x.font=`900 ${i>=9?28:34}px ${F}`; x.textAlign='center'; x.textBaseline='middle'; x.fillText(String(i+1),px+40,py+42);
     x.font='44px sans-serif'; x.fillText(tasks[i].e, px+ps-38, py+42);
-    // texts
     x.textBaseline='alphabetic'; x.textAlign='left';
     x.fillStyle='#6b6790'; x.font=`700 24px ${F}`;
     x.fillText(`${i+1}. úkol – měl jsem vyfotit:`, 22, py+ps+42);
     x.fillStyle='#24204a'; x.font=`900 32px ${F}`;
-    const lines=wrap(x,cap(tasks[i].t),cw-44).slice(0,2);
-    lines.forEach((ln,k)=>x.fillText(ln,22,py+ps+84+k*38));
+    wrap(x,cap(tasks[i].t),cw-44).slice(0,2).forEach((ln,k)=>x.fillText(ln,22,py+ps+84+k*38));
     x.fillStyle='#ff2d75'; x.font=`italic 800 27px ${F}`;
-    const fl=wrap(x,fun[i%fun.length].replace('{n}',p.name),cw-44).slice(0,1);
-    x.fillText(fl[0], 22, ch-24);
+    x.fillText(wrap(x,fun[i%fun.length].replace('{n}',p.name),cw-44)[0], 22, ch-24);
     x.restore();
   }
-  // footer
-  const fy=gy+2*ch+gapy+30;
+  const fy=gridBottom+30;
   x.textAlign='center'; x.textBaseline='middle';
-  x.fillStyle='rgba(255,255,255,.15)'; rr(x,40,fy,W-80,H-fy-30,30); x.fill();
-  const mid=fy+(H-fy-30)/2;
-  // avatar
+  x.fillStyle='rgba(255,255,255,.15)'; rr(x,40,fy,W-80,footH,30); x.fill();
+  const mid=fy+footH/2;
   const ax=110, ar=48;
   x.save(); x.beginPath(); x.arc(ax,mid,ar,0,7); x.closePath(); x.fillStyle='#fff'; x.fill();
   if(p.avatar){ const ai=await loadImg(p.avatar); x.clip(); x.drawImage(ai,ax-ar,mid-ar,ar*2,ar*2); }
   else { x.font='58px sans-serif'; x.fillStyle='#000'; x.fillText(p.emoji||'🙂',ax,mid+4); }
   x.restore();
   x.textAlign='left'; x.fillStyle='#fff'; x.font=`900 40px ${F}`; x.fillText(p.name, 180, mid-18);
-  x.font=`700 28px ${F}`; x.fillStyle='#ffd23f'; x.fillText(`${L.emoji} ${L.name} · ⭐ +${L.stars}`, 180, mid+24);
+  x.font=`700 28px ${F}`; x.fillStyle='#ffd23f'; x.fillText(`${L.emoji} ${L.name} · ${S.e} ${S.name} · 📸 ${n} · ⭐ +${earned}`, 180, mid+24);
   x.textAlign='right'; x.fillStyle='#fff'; x.font=`900 36px ${F}`; x.fillText('Mise splněna! 🎉', W-80, mid);
-  return c.toDataURL('image/jpeg',.9);
+  return c.toDataURL('image/jpeg',.88);
 }
 async function finish(){
-  if(!photos.every(x=>x&&x.ok)) return;
+  if(!allDone()) return;
   loading(true,'Lepím koláž…');
   try{
-    const p=current;
-    const data=await buildCollage(p,game.drawn,photos.map(x=>x.src));
+    const p=current, g=game;
+    const earned=Math.max(1,Math.round(LEVELS[g.level].stars*g.n/4)) + (g.season==='m'?2:0);
+    const data=await buildCollage(p,g,photos.map(x=>x.src),earned);
     const id=uid();
     await DB.set('col_'+id,data);
     const al=(await dbGet('album_'+p.id))||[];
-    al.unshift({id,date:Date.now(),level:game.level});
+    al.unshift({id,date:Date.now(),level:g.level,season:g.season,n:g.n});
     await DB.set('album_'+p.id,al);
-    p.stars+=LEVELS[game.level].stars; p.count++; saveProfiles();
-    // reset hry
-    localStorage.removeItem(gameKey(p.id)); for(let i=0;i<4;i++) DB.del('ph_'+p.id+'_'+i);
-    game=null; photos=[null,null,null,null];
+    p.stars+=earned; p.count++; saveProfiles();
+    localStorage.removeItem(gameKey(p.id)); for(let i=0;i<g.n;i++) DB.del('ph_'+p.id+'_'+i);
+    game=null; photos=[];
     loading(false);
     fanfare(); confetti(35); vibrate(120);
     showCollage(data,id,true);
@@ -764,7 +866,7 @@ async function showAlbum(){
   for(const a of al){ const d=await dbGet('col_'+a.id); if(d) items.push({...a,data:d}); }
   render(`
     <div class="top"><button class="iconbtn" id="back">←</button><h1>Album – ${esc(p.name)}</h1></div>
-    ${items.length?`<div class="album">${items.map(it=>`<div class="it" data-id="${it.id}"><img src="${it.data}"><div class="d">${new Date(it.date).toLocaleDateString('cs-CZ')} · ${LEVELS[it.level].emoji}</div></div>`).join('')}</div>`
+    ${items.length?`<div class="album">${items.map(it=>`<div class="it" data-id="${it.id}"><img src="${it.data}"><div class="d">${new Date(it.date).toLocaleDateString('cs-CZ')} · ${LEVELS[it.level].emoji}${it.season?SEASONS[it.season].e:''}${it.n?' · 📸 '+it.n:''}</div></div>`).join('')}</div>`
       :`<div class="empty">Zatím tu nic není.<br>Zatoč kolem a vyraž na první výpravu! 🎡</div>`}
   `);
   document.getElementById('back').onclick=()=>openProfile(p.id);
